@@ -15,31 +15,32 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Rapid Invoice - Fast & Automatic Invoice Generator | Billing SaaS",
-    template: "%s | Rapid Invoice"
+    default: "Industrial Geospatial Intelligence | Real-Time Operations Platform",
+    template: "%s | Industrial Geospatial"
   },
-  description: "Generate professional invoices in seconds with AI. Automatic invoice generator with prompts, multi-currency, multi-language and PDF export. Perfect for freelancers and SMEs looking to save time.",
+  description: "Transform chaotic industrial data into actionable insights. Reduce operational inefficiencies by 40% and achieve 99.9% uptime with real-time AI-powered geospatial analytics. Purpose-built for manufacturing, logistics, and smart cities.",
   
   keywords: [
-    "invoice generator",
-    "automatic invoicing",
-    "rapid invoice",
-    "AI invoices",
-    "PDF invoice generator",
-    "freelancer billing",
-    "SME invoicing",
-    "multi-currency invoices",
-    "multi-language invoices",
-    "billing SaaS",
-    "create invoices fast",
-    "public invoice link",
-    "online invoices",
-    "automate invoicing"
+    "industrial geospatial platform",
+    "real-time operations monitoring",
+    "manufacturing analytics",
+    "logistics optimization",
+    "smart cities platform",
+    "industrial IoT dashboard",
+    "sensor data visualization",
+    "geospatial intelligence",
+    "operational efficiency",
+    "industrial AI analytics",
+    "facility management software",
+    "asset tracking platform",
+    "predictive maintenance",
+    "industrial operations SaaS",
+    "real-time site monitoring"
   ],
 
-  authors: [{ name: "Rapid Invoice" }],
-  creator: "Rapid Invoice",
-  publisher: "Rapid Invoice",
+  authors: [{ name: "Industrial Geospatial" }],
+  creator: "Industrial Geospatial",
+  publisher: "Industrial Geospatial",
 
   robots: {
     index: true,
@@ -56,47 +57,46 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://rapidinvoice.eu',
-    siteName: 'Rapid Invoice',
-    title: 'Rapid Invoice - Fast & Automatic Invoice Generator',
-    description: 'Generate professional invoices in seconds with AI. Perfect for freelancers and SMEs. Multi-currency, multi-language and PDF export.',
+    url: 'https://yourdomain.com',
+    siteName: 'Industrial Geospatial',
+    title: 'Industrial Geospatial Intelligence | Real-Time Operations Platform',
+    description: 'Convert chaotic industrial data into crystal-clear insights. Reduce inefficiencies by 40% and boost uptime to 99.9% with AI-powered geospatial analytics.',
     images: [
       {
-        url: 'https://rapidinvoice.eu/og-image.png',
+        url: 'https://yourdomain.com/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Rapid Invoice - AI Invoice Generator',
+        alt: 'Industrial Geospatial - Real-Time Operations Intelligence',
       },
     ],
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'Rapid Invoice - Fast & Automatic Invoice Generator',
-    description: 'Generate professional invoices in seconds with AI. Multi-currency, multi-language and PDF export.',
-    images: ['https://rapidinvoice.eu/twitter-image.jpg'],
-    creator: '@rapidinvoice',
+    title: 'Industrial Geospatial Intelligence | Real-Time Operations',
+    description: 'Transform industrial chaos into actionable insights. 40% efficiency gain, 99.9% uptime. Purpose-built for operations teams.',
+    images: ['https://yourdomain.com/twitter-image.jpg'],
+    creator: '@yourhandle',
   },
 
   alternates: {
-    canonical: 'https://rapidinvoice.eu',
+    canonical: 'https://yourdomain.com',
     languages: {
-      'es-ES': 'https://rapidinvoice.eu/es',
-      'en-US': 'https://rapidinvoice.eu/en',
-      'fr-FR': 'https://rapidinvoice.eu/fr',
-      'de-DE': 'https://rapidinvoice.eu/de',
+      'en-US': 'https://yourdomain.com/en',
+      'es-ES': 'https://yourdomain.com/es',
+      'de-DE': 'https://yourdomain.com/de',
+      'fr-FR': 'https://yourdomain.com/fr',
     },
   },
 
   verification: {
     google: 'your-google-verification-code',
-    // Add other verification codes when you have them
   },
 
   category: 'technology',
-  classification: 'Business Software',
+  classification: 'Industrial Software',
 
-  metadataBase: new URL('https://rapidinvoice.eu'),
+  metadataBase: new URL('https://yourdomain.com'),
 };
 
 export default function RootLayout({
@@ -111,9 +111,19 @@ export default function RootLayout({
           {/* Favicon */}
           <link rel="icon" href="/favicon.ico" sizes="32x32" />
           <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-          {/* <link rel="apple-touch-icon" href="/apple-touch-icon.png" /> */}
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+          
+          {/* Preload critical fonts for monospace data display */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         </head>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen`}>
+        <body 
+          className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen bg-[#0a0a0a] text-gray-100`}
+          style={{
+            // Optimized for multi-screen 24/7 operations environments
+            fontFeatureSettings: '"tnum", "cv01"', // Tabular numbers for data consistency
+          }}
+        >
           {children}
         </body>
       </html>

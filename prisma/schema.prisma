@@ -8,64 +8,331 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ============================================
+// USER - Synced con Clerk (ID directo)
+// ============================================
+
 model User {
-  id                       String        @id @unique
-  email                    String        @unique
-  stripeCustomerId         String?       @unique
-  name                     String?
-  monthlyPromptLimit       Int           @default(10)
-  currentPromptUsage       Int           @default(0)
-  lastPromptReset          DateTime      @default(now())
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
-  preferredCurrency        String        @default("EUR")
-  preferredLanguage        String        @default("es")
-  preferredInvoiceLanguage String        @default("es")
-  monthlyInvoiceLimit      Int           @default(5)
-  currentInvoiceUsage      Int           @default(0)
-  lastInvoiceReset         DateTime      @default(now()) @db.Timestamp(6)
-  invoices                 Invoice[]
-  subscription             Subscription?
+  id    String @id @unique // Clerk user ID directo
+  email String @unique
+  name  String?
+
+  // Stripe
+  stripeCustomerId String? @unique
+
+  // Límites y contadores (estilo tu Invoice SaaS)
+  monthlyDatasetsLimit   Int      @default(1) // FREE: 1, PRO: -1 (ilimitado)
+  currentDatasetsUsage   Int      @default(0)
+  monthlyAIInsightsLimit Int      @default(3) // FREE: 3, PRO: -1
+  currentAIInsightsUsage Int      @default(0)
+  dailyDataPointsLimit   Int      @default(100) // FREE: 100, PRO: -1
+  currentDataPointsUsage Int      @default(0)
+  lastAIReset            DateTime @default(now())
+  lastDataPointsReset    DateTime @default(now())
+
+  // Preferencias
+  timezone            String @default("Europe/Madrid")
+  notificationsEmail  Boolean @default(true)
+  notificationsSlack  Boolean @default(false)
+  slackWebhookUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  datasets      Dataset[]
+  insights      Insight[]
+  subscription  Subscription?
+  notifications Notification[]
+  apiKeys       ApiKey[]
+  activityLogs  ActivityLog[]
+
+  @@index([email])
 }
+
+// ============================================
+// SUBSCRIPTION - Estilo simplificado
+// ============================================
 
 model Subscription {
   stripeSubscriptionId String   @id @unique
-  status               String
+  status               String // active, canceled, past_due, trialing
   currentPeriodStart   DateTime
   currentPeriodEnd     DateTime
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  interval             String
-  planId               String
-  userId               String   @unique
-  user                 User     @relation(fields: [userId], references: [id])
-}
+  interval             String // month, year
+  planId               String // price_xxx de Stripe
+  cancelAtPeriodEnd    Boolean  @default(false)
 
-model Invoice {
-  id              String    @id @default(cuid())
-  userId          String
-  invoiceNumber   String
-  date            String
-  dueDate         String
-  companyData     Json
-  clientData      Json
-  items           Json
-  notes           String?
-  subtotal        Float
-  tax             Float
-  taxRate         Float
-  total           Float
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  currency        String    @default("EUR")
-  isPublic        Boolean   @default(false)
-  publicExpiresAt DateTime?
-  publicToken     String?   @unique
-  language        String    @default("es")
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([status])
+}
+
+// ============================================
+// DATASETS - Core del producto
+// ============================================
+
+model Dataset {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Metadata básica
+  name        String
+  description String?
+  status      String  @default("processing") // active, idle, error, archived, processing
+
+  // Source config
+  source         String // csv_upload, json_upload, mqtt_stream, webhook, api
+  mqttBroker     String?
+  mqttTopic      String?
+  mqttUsername   String?
+  mqttPassword   String? // Encriptado en producción
+  webhookUrl     String? @unique // URL generada: /api/webhooks/dataset/[id]
+  webhookSecret  String? // Para validar requests
+  apiEndpoint    String?
+
+  // Bounding box para renderizado 3D (JSON simple)
+  boundingBox Json? // {min: {x, y, z}, max: {x, y, z}}
+
+  // Estadísticas en tiempo real
+  totalDataPoints  Int      @default(0)
+  dataPointsToday  Int      @default(0)
+  lastDataReceived DateTime?
+  avgUpdateFreq    Int? // Segundos entre updates
+
+  // Configuración de alertas
+  alertsEnabled    Boolean @default(false)
+  alertThresholds  Json? // {temperature: {max: 80, min: 10}, vibration: {max: 50}}
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  dataPoints DataPoint[]
+  insights   Insight[]
+  alerts     Alert[]
+  layers     Layer[]
+
+  @@index([userId, status])
+  @@index([status])
   @@index([userId, createdAt])
-  @@index([publicToken])
-  @@index([language])
+}
+
+// ============================================
+// DATA POINTS - Telemetría
+// ============================================
+
+model DataPoint {
+  id        String  @id @default(cuid())
+  datasetId String
+  dataset   Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  // Coordenadas 3D
+  x Float
+  y Float
+  z Float?
+
+  // Valor y metadata
+  value      Float
+  unit       String? // °C, psi, %, rpm
+  sensorId   String?
+  sensorType String? // temperature, vibration, pressure, flow
+
+  // Flexible metadata (resto de campos custom)
+  metadata Json?
+
+  // Timestamp del DATO (no de inserción DB)
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([datasetId, timestamp(sort: Desc)])
+  @@index([sensorId, timestamp(sort: Desc)])
+  @@index([timestamp(sort: Desc)])
+}
+
+// ============================================
+// LAYERS - Capas de visualización 3D
+// ============================================
+
+model Layer {
+  id        String  @id @default(cuid())
+  datasetId String
+  dataset   Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  enabled     Boolean @default(true)
+  order       Int     @default(0) // Para ordenar en UI
+
+  // Configuración visual
+  colorScheme Json? // {type: "gradient", low: "#00ff00", high: "#ff0000"}
+  opacity     Float   @default(1.0)
+  pointSize   Float   @default(1.0)
+
+  // Filtros (SQL-like para backend)
+  filterQuery String? // sensorType = 'temperature' AND value > 70
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([datasetId, order])
+}
+
+// ============================================
+// AI INSIGHTS - Análisis generados
+// ============================================
+
+model Insight {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  datasetId String
+  dataset   Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  type     String // anomaly, prediction, optimization, pattern
+  severity String // info, warning, critical
+
+  // Contenido AI
+  title           String
+  summary         String   @db.Text
+  details         String?  @db.Text
+  recommendations String?  @db.Text
+
+  // Data estructurada
+  affectedArea Json? // {sector: "3B", coords: {x, y, z}}
+  metricsDelta Json? // {efficiency: -18, temperature: +5}
+
+  // Estado
+  isResolved Boolean  @default(false)
+  resolvedAt DateTime?
+  resolvedBy String? // User ID
+
+  // AI metadata
+  modelUsed       String? @default("gemini-2.0-flash-exp")
+  confidence      Float? // 0-1
+  processingTimeMs Int?
+  tokensUsed      Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([datasetId, severity])
+  @@index([isResolved, createdAt(sort: Desc)])
+}
+
+// ============================================
+// ALERTS - Sistema de alertas threshold
+// ============================================
+
+model Alert {
+  id        String  @id @default(cuid())
+  datasetId String
+  dataset   Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  // Regla de alerta
+  name           String
+  condition      String // temperature > 80 AND zone = '3B'
+  thresholdValue Float
+  currentValue   Float
+
+  status   String   @default("active") // active, acknowledged, resolved, muted
+  severity String // info, warning, critical
+  message  String   @db.Text
+
+  triggeredAt    DateTime  @default(now())
+  acknowledgedAt DateTime?
+  acknowledgedBy String? // User ID
+  resolvedAt     DateTime?
+  mutedUntil     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([datasetId, status])
+  @@index([status, severity])
+}
+
+// ============================================
+// NOTIFICATIONS - Sistema de notificaciones
+// ============================================
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String @default("info") // info, warning, error, success
+  title   String
+  message String @db.Text
+
+  isRead Boolean  @default(false)
+  readAt DateTime?
+
+  // Link a recurso (opcional)
+  relatedType String? // dataset, insight, alert
+  relatedId   String?
+  actionUrl   String? // URL para "Ver detalles"
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
+
+// ============================================
+// API KEYS - Para integraciones externas
+// ============================================
+
+model ApiKey {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name   String
+  key    String  @unique // Hash del key (SHA-256)
+  prefix String // sk_live_abc123... (primeros 8 chars para mostrar)
+
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+
+  // Rate limiting
+  rateLimit  Int @default(1000) // Requests por hora
+  usageCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isActive])
+  @@index([key])
+}
+
+// ============================================
+// ACTIVITY LOG - Auditoría (opcional MVP)
+// ============================================
+
+model ActivityLog {
+  id String @id @default(cuid())
+
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String // dataset.created, insight.generated, alert.triggered
+  resource   String // Dataset, Insight, Alert
+  resourceId String?
+
+  metadata  Json? // Datos extra del evento
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
 }

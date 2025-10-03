@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import DashboardContent from "./_components/DashboardContentInvoice"
+import DashboardContent from "./_components/DashboardContentGis"
 import AuthRequiredPopup from "@/components/AuthRequiredPopup"
 import { Toaster } from 'sonner';
 

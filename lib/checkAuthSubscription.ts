@@ -7,18 +7,21 @@ export type AuthCheckResult = {
   userId: string | null;
   isAuthenticated: boolean;
   hasSubscription: boolean;
+  subscriptionStatus?: string;
   redirectTo?: string;
 };
 
-export async function checkAuthenticationAndSubscription(waitMs = 0): Promise<AuthCheckResult> {
+export async function checkAuthenticationAndSubscription(
+  waitMs = 0
+): Promise<AuthCheckResult> {
   const { userId } = await auth();
-  
+
   if (!userId) {
     return {
       userId: null,
       isAuthenticated: false,
       hasSubscription: false,
-      redirectTo: '/sign-in?redirect_url=/dashboard'
+      redirectTo: "/sign-in?redirect_url=/dashboard",
     };
   }
 
@@ -32,7 +35,7 @@ export async function checkAuthenticationAndSubscription(waitMs = 0): Promise<Au
       where: { userId },
     });
   } catch (error) {
-    console.error('Error checking subscription:', error);
+    console.error("Error checking subscription:", error);
     return {
       userId,
       isAuthenticated: true,
@@ -40,12 +43,15 @@ export async function checkAuthenticationAndSubscription(waitMs = 0): Promise<Au
     };
   }
 
-  const hasActiveSubscription = subscription?.status === 'active';
+  // Con tu nuevo schema, status puede ser: active, canceled, past_due, trialing
+  const hasActiveSubscription =
+    subscription?.status === "active" || subscription?.status === "trialing";
 
   return {
     userId,
     isAuthenticated: true,
     hasSubscription: hasActiveSubscription,
-    redirectTo: hasActiveSubscription ? undefined : '/pricing'
+    subscriptionStatus: subscription?.status,
+    redirectTo: hasActiveSubscription ? undefined : "/pricing",
   };
-} 
+}

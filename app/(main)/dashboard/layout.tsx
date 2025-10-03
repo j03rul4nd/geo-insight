@@ -9,7 +9,7 @@ export default function MainLayout({
     <>     
       {/* Contenido principal */}
       <div className="relative z-10">
-        <Navbar />
+        {/* <Navbar /> */}
         {children}
       </div>
     </>
