@@ -3,8 +3,6 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { addPromptsToLimit } from '@/lib/promptLimits'
-import { setPremiumLimits } from '@/lib/invoiceLimits'
 
 export async function POST(req: Request) {
   console.log('🔵 [WEBHOOK] Iniciando procesamiento del webhook de Stripe')
@@ -46,7 +44,6 @@ export async function POST(req: Request) {
     console.log('✅ [WEBHOOK] Evento construido exitosamente')
     console.log('🔵 [WEBHOOK] Tipo de evento:', event.type)
     console.log('🔵 [WEBHOOK] ID del evento:', event.id)
-    console.log('🔵 [WEBHOOK] Datos del evento:', JSON.stringify(event.data.object, null, 2))
 
     switch (event.type) {
       case 'checkout.session.completed':
@@ -137,11 +134,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       console.log('✅ [CHECKOUT] Usuario encontrado:', user.id)
       
       try {
-        // Establecer límites premium: 100 prompts y 100 facturas al mes
+        // Establecer límites PRO para el nuevo suscriptor
         await setPremiumLimits(user.id)
-        console.log(`✅ [CHECKOUT] Límites premium establecidos para el usuario ${user.id}: 100 prompts y 100 facturas mensuales`)
+        console.log(`✅ [CHECKOUT] Límites PRO establecidos para el usuario ${user.id}:`)
+        console.log('   - Datasets: Ilimitados')
+        console.log('   - AI Insights: Ilimitados')
+        console.log('   - Data Points: Ilimitados')
       } catch (error) {
-        console.error(`❌ [CHECKOUT] Error estableciendo límites premium para el usuario ${user.id}:`, error)
+        console.error(`❌ [CHECKOUT] Error estableciendo límites PRO para el usuario ${user.id}:`, error)
       }
     } else {
       console.warn('⚠️ [CHECKOUT] No se encontró el usuario con stripeCustomerId:', session.customer)
@@ -174,9 +174,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     })
     console.log('✅ [SUBSCRIPTION_UPDATED] Suscripción actualizada en la base de datos')
 
-    // Si la suscripción está activa, mantener los límites premium
+    // Si la suscripción está activa, mantener los límites PRO
     if (subscription.status === 'active') {
-      console.log('🔵 [SUBSCRIPTION_UPDATED] Suscripción activa, manteniendo límites premium')
+      console.log('🔵 [SUBSCRIPTION_UPDATED] Suscripción activa, manteniendo límites PRO')
       
       // Buscar el usuario asociado a esta suscripción
       const subscriptionRecord = await prisma.subscription.findUnique({
@@ -187,9 +187,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       if (subscriptionRecord) {
         try {
           await setPremiumLimits(subscriptionRecord.userId)
-          console.log(`✅ [SUBSCRIPTION_UPDATED] Límites premium mantenidos para el usuario ${subscriptionRecord.userId}`)
+          console.log(`✅ [SUBSCRIPTION_UPDATED] Límites PRO mantenidos para el usuario ${subscriptionRecord.userId}`)
         } catch (error) {
-          console.error(`❌ [SUBSCRIPTION_UPDATED] Error manteniendo límites premium:`, error)
+          console.error(`❌ [SUBSCRIPTION_UPDATED] Error manteniendo límites PRO:`, error)
         }
       }
     }
@@ -204,7 +204,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log('🔵 [SUBSCRIPTION_DELETED] Subscription ID:', subscription.id)
 
   try {
-    // Buscar el usuario antes de eliminar la suscripción para revertir a límites gratuitos
+    // Buscar el usuario antes de eliminar la suscripción para revertir a límites FREE
     const subscriptionRecord = await prisma.subscription.findUnique({
       where: { stripeSubscriptionId: subscription.id },
       select: { userId: true }
@@ -212,10 +212,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
     if (subscriptionRecord) {
       try {
-        // Importar la función para revertir a límites gratuitos
-        const { setFreeTierLimits } = await import('@/lib/invoiceLimits')
+        // Revertir a límites FREE del plan gratuito
         await setFreeTierLimits(subscriptionRecord.userId)
-        console.log(`✅ [SUBSCRIPTION_DELETED] Límites revertidos a tier gratuito para el usuario ${subscriptionRecord.userId}: 5 facturas, 10 prompts`)
+        console.log(`✅ [SUBSCRIPTION_DELETED] Límites revertidos a tier FREE para el usuario ${subscriptionRecord.userId}:`)
+        console.log('   - Datasets: 1 mensual')
+        console.log('   - AI Insights: 3 mensuales')
+        console.log('   - Data Points: 100 diarios')
       } catch (error) {
         console.error(`❌ [SUBSCRIPTION_DELETED] Error revirtiendo límites para el usuario ${subscriptionRecord.userId}:`, error)
       }
@@ -275,11 +277,11 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       console.log('✅ [PAYMENT_SUCCESS] Registro de suscripción encontrado, usuario:', subscriptionRecord.userId)
       
       try {
-        // Renovar límites premium en cada pago exitoso
+        // Renovar límites PRO en cada pago exitoso (reset mensual)
         await setPremiumLimits(subscriptionRecord.userId)
-        console.log(`✅ [PAYMENT_SUCCESS] Límites premium renovados para el usuario ${subscriptionRecord.userId} después del pago exitoso: 100 prompts y 100 facturas`)
+        console.log(`✅ [PAYMENT_SUCCESS] Límites PRO renovados para el usuario ${subscriptionRecord.userId} después del pago exitoso`)
       } catch (error) {
-        console.error(`❌ [PAYMENT_SUCCESS] Error renovando límites premium para el usuario ${subscriptionRecord.userId}:`, error)
+        console.error(`❌ [PAYMENT_SUCCESS] Error renovando límites PRO para el usuario ${subscriptionRecord.userId}:`, error)
       }
     } else {
       console.warn('⚠️ [PAYMENT_SUCCESS] No se encontró registro de suscripción para:', subscription.id)
@@ -307,4 +309,74 @@ function mapSubscriptionData(subscription: Stripe.Subscription) {
   console.log('🔵 [MAP_SUBSCRIPTION] Datos mapeados:', JSON.stringify(mappedData, null, 2))
   
   return mappedData
+}
+
+// ============================================
+// FUNCIONES DE GESTIÓN DE LÍMITES
+// ============================================
+
+/**
+ * Establece límites PRO (ilimitados) para un usuario
+ * - Datasets: -1 (ilimitados)
+ * - AI Insights: -1 (ilimitados)
+ * - Data Points: -1 (ilimitados)
+ */
+async function setPremiumLimits(userId: string) {
+  console.log('🔵 [SET_PREMIUM] Estableciendo límites PRO para usuario:', userId)
+  
+  const now = new Date()
+  
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      // Límites ilimitados para PRO
+      monthlyDatasetsLimit: -1,
+      monthlyAIInsightsLimit: -1,
+      dailyDataPointsLimit: -1,
+      
+      // Resetear contadores actuales
+      currentDatasetsUsage: 0,
+      currentAIInsightsUsage: 0,
+      currentDataPointsUsage: 0,
+      
+      // Actualizar fechas de reset
+      lastAIReset: now,
+      lastDataPointsReset: now,
+    }
+  })
+  
+  console.log('✅ [SET_PREMIUM] Límites PRO establecidos exitosamente')
+}
+
+/**
+ * Revierte a límites FREE tier para un usuario
+ * - Datasets: 1 mensual
+ * - AI Insights: 3 mensuales
+ * - Data Points: 100 diarios
+ */
+async function setFreeTierLimits(userId: string) {
+  console.log('🔵 [SET_FREE] Revirtiendo a límites FREE para usuario:', userId)
+  
+  const now = new Date()
+  
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      // Límites del plan FREE
+      monthlyDatasetsLimit: 1,
+      monthlyAIInsightsLimit: 3,
+      dailyDataPointsLimit: 100,
+      
+      // Resetear contadores actuales
+      currentDatasetsUsage: 0,
+      currentAIInsightsUsage: 0,
+      currentDataPointsUsage: 0,
+      
+      // Actualizar fechas de reset
+      lastAIReset: now,
+      lastDataPointsReset: now,
+    }
+  })
+  
+  console.log('✅ [SET_FREE] Límites FREE establecidos exitosamente')
 }

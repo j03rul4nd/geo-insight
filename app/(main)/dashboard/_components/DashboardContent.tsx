@@ -396,7 +396,7 @@ const formatInlineText = (text: string): (string | ReactNode)[] => {
     <div className="p-4">
       {/* Add your dashboard content here */}
 
-    <div className='min-h-[300vh] space-y-10 max-w-4xl mx-auto'>
+        <div className='min-h-[300vh] space-y-10 max-w-4xl mx-auto'>
             {showPaymentSuccess && (
                 <div className='bg-green-500/10 max-w-xl mx-auto my-8 border border-green-500/20 rounded-xl p-4 text-green-400'>
                     <div className='flex items-center justify-center'>

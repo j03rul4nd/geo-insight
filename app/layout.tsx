@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
+import { Toaster } from 'sonner';
+import { Providers } from './provider'; // ← NUEVO: Importar Providers
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -124,7 +126,18 @@ export default function RootLayout({
             fontFeatureSettings: '"tnum", "cv01"', // Tabular numbers for data consistency
           }}
         >
-          {children}
+          {/* ← NUEVO: Envolver children con Providers */}
+          <Providers>
+            {children}
+            {/* ← NUEVO: Toaster global para notificaciones */}
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                className: 'dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700',
+              }}
+            />
+          </Providers>
         </body>
       </html>
     </ClerkProvider>
