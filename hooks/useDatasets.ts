@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Dataset } from '@/types/Datasets';
 
-
 interface UseDatasets {
   datasets: Dataset[];
   loading: boolean;
@@ -11,7 +10,7 @@ interface UseDatasets {
   createDataset: (data: CreateDatasetPayload) => Promise<Dataset>;
   deleteDataset: (id: string) => Promise<void>;
   archiveDataset: (id: string) => Promise<void>;
-  testMQTTConnection: (config: MQTTConfig) => Promise<boolean>;
+  testMQTTConnection: (config: MQTTConfig) => Promise<MQTTTestResult>;
 }
 
 interface CreateDatasetPayload {
@@ -44,6 +43,27 @@ interface MQTTConfig {
   clientId?: string;
   keepAlive?: number;
   cleanSession?: boolean;
+}
+
+interface ConnectionLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  details?: any;
+}
+
+interface MQTTTestResult {
+  success: boolean;
+  latency?: number;
+  error?: string;
+  message?: string;
+  logs?: ConnectionLog[];
+  connectionDetails?: {
+    protocol: string;
+    host: string;
+    port: string;
+    useTLS: boolean;
+  };
 }
 
 export function useDatasets(): UseDatasets {
@@ -141,23 +161,63 @@ export function useDatasets(): UseDatasets {
     }
   };
 
-  const testMQTTConnection = async (config: MQTTConfig): Promise<boolean> => {
+  /**
+   * Prueba conexión MQTT
+   * Usa el endpoint /api/settings/integrations/mqtt que has sobrescrito
+   */
+  const testMQTTConnection = async (config: MQTTConfig): Promise<MQTTTestResult> => {
     try {
+      console.log('🔌 Testing MQTT connection...', {
+        broker: config.brokerUrl,
+        topic: config.topic,
+        hasUsername: !!config.username,
+      });
+
       const res = await fetch('/api/settings/integrations/mqtt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          mqttBroker: config.brokerUrl,
+          mqttTopic: config.topic,
+          mqttUsername: config.username,
+          mqttPassword: config.password,
+        })
       });
 
-      if (!res.ok) {
-        return false;
+      const result: MQTTTestResult = await res.json();
+
+      // Log detallado del resultado
+      if (result.success) {
+        console.log('✅ MQTT connection successful', {
+          latency: result.latency,
+          message: result.message,
+          details: result.connectionDetails,
+        });
+      } else {
+        console.error('❌ MQTT connection failed', {
+          error: result.error,
+          logs: result.logs,
+        });
       }
 
-      const result = await res.json();
-      return result.success === true;
+      // Mostrar logs si están disponibles
+      if (result.logs && result.logs.length > 0) {
+        console.group('📝 Connection Logs:');
+        result.logs.forEach(log => {
+          const emoji = log.level === 'error' ? '❌' : log.level === 'warn' ? '⚠️' : 'ℹ️';
+          console.log(`${emoji} [${log.timestamp}] ${log.message}`, log.details || '');
+        });
+        console.groupEnd();
+      }
+
+      return result;
     } catch (err) {
-      console.error('MQTT test failed:', err);
-      return false;
+      console.error('❌ MQTT test request failed:', err);
+      
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Network error occurred',
+      };
     }
   };
 

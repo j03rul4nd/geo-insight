@@ -413,7 +413,7 @@ const DatasetManagement: React.FC = () => {
 
       {/* Table Zone */}
       <div className="bg-[#0a0a0a] border border-gray-800 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full">
             <thead className="bg-[#18181b] sticky top-0 z-10">
               <tr className="border-b border-gray-800">
