@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 // Schema de validación mejorado
@@ -158,8 +159,8 @@ export async function PATCH(
         sensorTypePath: validatedData.sensorTypePath ?? null,
         timestampPath: validatedData.timestampPath,
         unitPath: validatedData.unitPath ?? null,
-        transforms: validatedData.transforms ?? null,
-        metadata: validatedData.metadata ?? null,
+        transforms: validatedData.transforms ?? Prisma.JsonNull,
+        metadata: validatedData.metadata ?? Prisma.JsonNull,
       },
       create: {
         datasetId,
@@ -171,8 +172,8 @@ export async function PATCH(
         sensorTypePath: validatedData.sensorTypePath ?? null,
         timestampPath: validatedData.timestampPath,
         unitPath: validatedData.unitPath ?? null,
-        transforms: validatedData.transforms ?? null,
-        metadata: validatedData.metadata ?? null,
+        transforms: validatedData.transforms ?? Prisma.JsonNull,
+        metadata: validatedData.metadata ?? Prisma.JsonNull,
       },
     });
     
@@ -261,8 +262,8 @@ export async function DELETE(
         sensorTypePath: 'sensorType',
         timestampPath: 'timestamp',
         unitPath: 'unit',
-        transforms: null,
-        metadata: null,
+        transforms: Prisma.JsonNull,
+        metadata: Prisma.JsonNull,
       },
       create: {
         datasetId,

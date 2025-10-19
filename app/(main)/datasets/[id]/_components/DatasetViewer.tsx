@@ -14,14 +14,15 @@ import DatasetError from './LoadingDatasetError';
 
 import { useDataset } from '@/hooks/useDataset';
 import { useRealtimeDataPoints } from '@/hooks/useRealtimeDataPoints'; 
-import { useCanvas3DRenderer } from '@/hooks/useCanvas3DRenderer';
+import Viewer3DPanel from '@/components/Viewer3DPanel/Viewer3DPanel';
 
-import MappingConfigurator from './MappingConfigurator';
+
+import MappingConfigurator from '@/components/MappingConfigurator/MappingConfigurator';
 import { useDatasetMapping } from '@/hooks/useDatasetMapping';
 
 
 // ============================================
-// TYPES - Generic (no AGV-specific)
+// TYPES 
 // ============================================
 
 interface Layer {
@@ -43,15 +44,18 @@ interface Layer {
 
 interface DataPoint {
   id: string;
-  x: number;
-  y: number;
-  z: number | null;
+  datasetId: string;
   value: number;
-  sensorId: string | null;
-  sensorType: string | null;
-  unit: string | null;
+  sensorId: string;
   timestamp: Date | string;
-  metadata?: Record<string, any>;
+  metadata?: {
+    x?: number;
+    y?: number;
+    z?: number;
+    sensorType?: string;
+    unit?: string;
+    [key: string]: any; // Otros campos custom
+  };
 }
 
 interface Alert {
@@ -281,16 +285,24 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
 
   // ✅ AÑADIR: Buffer de mensajes raw (antes de normalizar)
   const [rawMessages, setRawMessages] = useState<any[]>([]);
+  const [normalizedMessages, setNormalizedMessages] = useState<DataPoint[]>([]);
 
   const { dataset, loading: datasetLoading, error: datasetError } = useDataset(datasetId);
 
+  const handleRawDataReceived = useCallback((rawData: any) => {
+    console.log('📨 Raw data received for configurator:', rawData);
+    
+    setRawMessages(prev => {
+      const updated = [rawData, ...prev];
+      return updated.slice(0, 20); // Guardar solo los últimos 20
+    });
+  }, []);
+  
   const handleDataReceived = useCallback((point: DataPoint) => {
     console.log('📊 New data point received:', point);
-    
-    // Guardar mensaje raw para el configurador
-    setRawMessages(prev => {
+    setNormalizedMessages(prev => {
       const updated = [point, ...prev];
-      return updated.slice(0, 20); // Guardar solo los últimos 20
+      return updated.slice(0, 20);
     });
   }, []);
 
@@ -341,6 +353,7 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
     autoConnect: true,
     initialFilters: {},
     onDataReceived: handleDataReceived, 
+    onRawDataReceived: handleRawDataReceived,
     onAlertReceived: handleAlertReceived,
     onError: handleError,
     onConnectionChange: handleConnectionChange,
@@ -413,7 +426,8 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
     const bySensorType: Record<string, { count: number; sum: number; values: number[] }> = {};
     
     dataPoints.forEach(point => {
-      const type = point.sensorType || 'unknown';
+      // sensorType ahora está en metadata
+      const type = point.metadata?.sensorType || 'unknown';
       if (!bySensorType[type]) {
         bySensorType[type] = { count: 0, sum: 0, values: [] };
       }
@@ -442,55 +456,8 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
   }, [dataPoints]);
 
   // ============================================
-  // 3D CANVAS RENDERING
-  // ============================================
-    const {
-      canvasRef,
-      rotation,
-      setRotation,
-      hoveredPoint,
-      setHoveredPoint,
-    } = useCanvas3DRenderer({
-      dataPoints,
-      layers,
-      selectedPoint,
-      colorMode,
-      valueRange,
-      isLive,
-    });
-
-  // ============================================
   // HANDLERS
   // ============================================
-
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!dataPoints) return;
-    
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    let closestPoint: DataPoint | null = null;
-    let minDist = Infinity;
-    
-    dataPoints.forEach(point => {
-      const scale = 1 + Math.sin(rotation.y * 0.01) * 0.2;
-      const projX = centerX + point.x * scale * Math.cos(rotation.y * 0.01) + rotation.x * 0.3;
-      const projY = centerY + point.y * scale + (point.z ?? 0) * 0.5 * Math.sin(rotation.y * 0.01);
-      
-      const dist = Math.sqrt((projX - x) ** 2 + (projY - y) ** 2);
-      if (dist < 20 && dist < minDist) {
-        minDist = dist;
-        closestPoint = point;
-      }
-    });
-    
-    setSelectedPoint(closestPoint);
-  };
 
   const runAIAnalysis = async () => {
     setShowAIModal(true);
@@ -869,34 +836,18 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
         {/* ============================================
             CENTER PANEL - 3D Viewer
             ============================================ */}
-        <div className="flex-1 relative">
-          <canvas 
-            ref={canvasRef}
-            onClick={handleCanvasClick}
-            className="w-full h-full cursor-crosshair"
-          />
-          
-          {/* Controls Overlay */}
-          <div className="absolute bottom-4 left-4 flex gap-2">
-            <button 
-              onClick={() => setRotation({ x: 0, y: 0 })}
-              className="bg-[#18181b]/90 backdrop-blur p-2 rounded hover:bg-[#27272a] transition-colors"
-              title="Reset View"
-            >
-              <RotateCcw size={16} />
-            </button>
-            <button className="bg-[#18181b]/90 backdrop-blur px-3 py-2 rounded hover:bg-[#27272a] text-xs transition-colors">
-              Top
-            </button>
-            <button className="bg-[#18181b]/90 backdrop-blur px-3 py-2 rounded hover:bg-[#27272a] text-xs transition-colors">
-              Front
-            </button>
-            <button className="bg-[#18181b]/90 backdrop-blur px-3 py-2 rounded hover:bg-[#27272a] text-xs transition-colors">
-              Side
-            </button>
-          </div>
-
-        </div>
+        <Viewer3DPanel
+          dataPoints={dataPoints}
+          layers={layers}
+          selectedPoint={selectedPoint}
+          onPointSelect={setSelectedPoint}  // ← Callback simplificado
+          colorMode={colorMode}
+          valueRange={valueRange}
+          isLive={isLive}
+          onViewChange={(view) => {
+            console.log('View changed to:', view);
+          }}
+        />
 
         {/* ============================================
             RIGHT PANEL - Alerts + Activity
@@ -1022,10 +973,11 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
           ============================================ */}
           {showMappingConfig && (
             <MappingConfigurator
-              rawMessages={rawMessages}
+              rawMessages={rawMessages.length > 0 ? rawMessages : normalizedMessages}
               onSave={handleSaveMapping}
               onClose={() => setShowMappingConfig(false)}
               datasetId={datasetId}
+              initialMapping={mapping}
             />
           )}
       

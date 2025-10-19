@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { detectMapping } from '@/lib/normalizePayload';
 
 /**
@@ -66,7 +67,7 @@ export async function POST(
           sensorTypePath: detected.sensorTypePath ?? null,
           timestampPath: detected.timestampPath,
           unitPath: detected.unitPath ?? null,
-          transforms: detected.transforms ?? null,
+          transforms: detected.transforms ?? Prisma.JsonNull,
         },
         create: {
           datasetId,
@@ -78,7 +79,7 @@ export async function POST(
           sensorTypePath: detected.sensorTypePath ?? null,
           timestampPath: detected.timestampPath,
           unitPath: detected.unitPath ?? null,
-          transforms: detected.transforms ?? null,
+          transforms: detected.transforms ?? Prisma.JsonNull,
         },
       });
       

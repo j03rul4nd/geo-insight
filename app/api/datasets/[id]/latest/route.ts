@@ -1,46 +1,6 @@
 /**
  * LATEST DATA POINTS ENDPOINT
  * 
- * GET - OBJETIVO:
- * Devolver los últimos N data points para renderizar el 3D viewer.
- * Esta es la ruta más llamada - DEBE ser rápida.
- * 
- * MISIÓN:
- * - Validar ownership
- * - Query params:
- *   · limit (default 1000, max 5000)
- *   · sensorType (opcional: filtrar por tipo)
- *   · sensorId (opcional: filtrar por sensor específico)
- *   · since (timestamp: solo puntos después de esta fecha)
- * - Consultar DataPoint WHERE datasetId = [id]
- *   ORDER BY timestamp DESC
- *   LIMIT [limit]
- * - Devolver solo campos necesarios para renderizado:
- *   · x, y, z (coordenadas 3D)
- *   · value (para color-coding)
- *   · sensorId, sensorType (para tooltips)
- *   · timestamp
- * - NO incluir metadata pesada
- * 
- * OPTIMIZACIÓN:
- * - Índice: (datasetId, timestamp DESC)
- * - Considerar cachear 5-10s si el dataset no es real-time
- * - Si limit > 1000, advertir que puede ser lento
- * 
- * USADO POR:
- * - ThreeJsViewer component (panel central de /datasets/[id])
- * - Se llama:
- *   · 1 vez al montar (carga inicial)
- *   · Cada 10-30s en polling (si no usa MQTT directo)
- *   · Cuando usuario cambia filtros/layers
- * 
- * PRISMA MODELS:
- * - DataPoint (x, y, z, value, sensorId, sensorType, timestamp)
- */
-
-/**
- * LATEST DATA POINTS ENDPOINT
- * 
  * GET /api/datasets/[id]/latest
  * 
  * Devuelve los últimos N data points para renderizar el 3D viewer.
@@ -146,8 +106,12 @@ export async function GET(
       datasetId: datasetId,
     };
 
+    // ✅ NUEVO: Filtrar por sensorType en metadata
     if (sensorType) {
-      whereClause.sensorType = sensorType;
+      whereClause.metadata = {
+        path: ['sensorType'],
+        equals: sensorType,
+      };
     }
 
     if (sensorId) {
@@ -165,14 +129,11 @@ export async function GET(
       where: whereClause,
       select: {
         id: true,
-        x: true,
-        y: true,
-        z: true,
+        datasetId: true,
         value: true,
         sensorId: true,
-        sensorType: true,
-        unit: true,
         timestamp: true,
+        metadata: true, // ✅ NUEVO: Traer todo metadata
       },
       orderBy: {
         timestamp: 'desc',
@@ -192,9 +153,27 @@ export async function GET(
       return [];
     });
 
+    // ✅ NUEVO: Transformar datos para frontend (compatibilidad)
+    // Si el frontend espera x, y, z en el nivel superior, los extraemos
+    const transformedData = dataPoints.map(point => ({
+      id: point.id,
+      datasetId: point.datasetId,
+      value: point.value,
+      sensorId: point.sensorId,
+      timestamp: point.timestamp,
+      // Extraer coordenadas de metadata para fácil acceso
+      x: (point.metadata as any)?.x ?? null,
+      y: (point.metadata as any)?.y ?? null,
+      z: (point.metadata as any)?.z ?? null,
+      sensorType: (point.metadata as any)?.sensorType ?? null,
+      unit: (point.metadata as any)?.unit ?? null,
+      // Mantener metadata completo para otros datos
+      metadata: point.metadata,
+    }));
+
     // 6. Metadata
     const hasLargeLimit = limit > 1000;
-    const metadata = {
+    const responseMetadata = {
       count: dataPoints.length,
       limit: limit,
       hasMore: dataPoints.length === limit,
@@ -217,8 +196,8 @@ export async function GET(
     return NextResponse.json(
       {
         success: true,
-        data: dataPoints,
-        metadata,
+        data: transformedData,
+        metadata: responseMetadata,
       },
       {
         status: 200,
@@ -261,7 +240,6 @@ export async function GET(
     );
   } finally {
     // ✅ Asegurar que las conexiones se liberen
-    // Prisma lo hace automáticamente, pero lo hacemos explícito
     await prisma.$disconnect().catch(() => {});
   }
 }

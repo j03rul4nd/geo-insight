@@ -17,16 +17,20 @@ import { toast } from 'sonner';
 // TIPOS
 // ============================================================================
 
-export interface DataPoint {
+interface DataPoint {
   id: string;
-  x: number;
-  y: number;
-  z: number;
+  datasetId: string;
   value: number;
   sensorId: string;
-  sensorType: string;
-  unit: string | null;
   timestamp: Date | string;
+  metadata?: {
+    x?: number;
+    y?: number;
+    z?: number;
+    sensorType?: string;
+    unit?: string;
+    [key: string]: any; // Otros campos custom
+  };
 }
 
 export interface DataPointsMetadata {
@@ -380,15 +384,15 @@ export function useLatestDataPoints(
     setIsEmpty(false);
   }, []);
 
-  /**
-   * Obtener puntos filtrados por tipo de sensor
-   */
-  const getPointsBySensorType = useCallback(
-    (sensorType: string) => {
-      return dataPoints.filter(point => point.sensorType === sensorType);
-    },
-    [dataPoints]
-  );
+/**
+ * Obtener puntos filtrados por tipo de sensor
+ */
+const getPointsBySensorType = useCallback(
+  (sensorType: string) => {
+    return dataPoints.filter(point => point.metadata?.sensorType === sensorType);
+  },
+  [dataPoints]
+);
 
   /**
    * Obtener puntos filtrados por sensor ID
@@ -407,7 +411,7 @@ export function useLatestDataPoints(
     if (dataPoints.length === 0) return null;
 
     const values = dataPoints.map(p => p.value);
-    const sensorTypes = new Set(dataPoints.map(p => p.sensorType));
+    const sensorTypes = new Set(dataPoints.map(p => p.metadata?.sensorType));
     const sensorIds = new Set(dataPoints.map(p => p.sensorId));
 
     return {

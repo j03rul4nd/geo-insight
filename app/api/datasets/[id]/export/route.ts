@@ -10,40 +10,34 @@
  *   · format ("csv" | "pdf")
  *   · timeRange ("24h" | "7d" | "30d" | "all")
  *   · includeInsights (boolean)
- *   · filters (opcional: sensorType, etc)
+ *   · filters (opcional: sensorId, etc)
  * - FREE TIER: Limitar a últimos 100 puntos + CSV only
  * - PRO TIER: Ilimitado + PDF con branding custom
  * - Generar archivo:
  *   · CSV: usar PapaParse para formatear DataPoints
- *   · PDF: renderizar con jsPDF + incluir Recharts screenshots
+ *   · PDF: renderizar con jsPDF + incluir insights
  * - Subir a storage (Supabase Storage o S3)
  * - Devolver downloadUrl con expiry (1 hora)
  * - Crear ActivityLog: action="dataset.exported"
  * 
  * FORMATO CSV:
- * timestamp,x,y,z,value,unit,sensorId,sensorType
- * 2025-10-08T14:30:00Z,45.2,12.8,3.5,78.5,°C,S-042,temperature
+ * timestamp,sensorId,value,metadata
+ * 2025-10-08T14:30:00Z,S-042,78.5,"{...}"
  * 
  * FORMATO PDF:
- * - Header: Dataset name, date range, logo
+ * - Header: Dataset name, date range
  * - Section 1: Stats summary
- * - Section 2: Charts (timeline, distribution)
- * - Section 3: AI Insights (si includeInsights=true)
- * - Section 4: Raw data table (primeros 1000 puntos)
+ * - Section 2: AI Insights (si includeInsights=true)
+ * - Section 3: Raw data table (primeros 1000 puntos)
  * 
  * USADO POR:
  * - Botón "Export" en /datasets/[id]
  * - Export modal con opciones
- * 
- * PRISMA MODELS:
- * - Dataset
- * - DataPoint (filtered query)
- * - Insight (si includeInsights=true)
- * - User (para validar tier y limitar exports)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import Papa from "papaparse";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -60,7 +54,6 @@ interface ExportRequestBody {
   timeRange: TimeRange;
   includeInsights?: boolean;
   filters?: {
-    sensorType?: string;
     sensorId?: string;
     minValue?: number;
     maxValue?: number;
@@ -69,13 +62,9 @@ interface ExportRequestBody {
 
 interface DataPointExport {
   timestamp: string;
-  x: number;
-  y: number;
-  z: number | null;
+  sensorId: string;
   value: number;
-  unit: string | null;
-  sensorId: string | null;
-  sensorType: string | null;
+  metadata: any;
 }
 
 // ============================================
@@ -101,7 +90,7 @@ function getTimeRangeDate(range: TimeRange): Date | null {
 
 function generateCSV(dataPoints: DataPointExport[]): string {
   const csv = Papa.unparse(dataPoints, {
-    columns: ["timestamp", "x", "y", "z", "value", "unit", "sensorId", "sensorType"],
+    columns: ["timestamp", "sensorId", "value", "metadata"],
     header: true,
   });
 
@@ -146,6 +135,7 @@ function generatePDF(
     ["Data Points Today", dataset.dataPointsToday.toString()],
     ["Last Data Received", dataset.lastDataReceived ? new Date(dataset.lastDataReceived).toLocaleString() : "N/A"],
     ["Status", dataset.status],
+    ["Source", dataset.source],
   ];
 
   autoTable(doc, {
@@ -205,17 +195,14 @@ function generatePDF(
 
   const tableData = dataPoints.slice(0, 1000).map((dp) => [
     new Date(dp.timestamp).toLocaleString(),
-    dp.x.toFixed(2),
-    dp.y.toFixed(2),
-    dp.z?.toFixed(2) || "N/A",
+    dp.sensorId,
     dp.value.toFixed(2),
-    dp.unit || "",
-    dp.sensorType || "",
+    dp.metadata ? JSON.stringify(dp.metadata).substring(0, 50) : "",
   ]);
 
   autoTable(doc, {
     startY: yPosition,
-    head: [["Timestamp", "X", "Y", "Z", "Value", "Unit", "Type"]],
+    head: [["Timestamp", "Sensor ID", "Value", "Metadata"]],
     body: tableData,
     theme: "grid",
     headStyles: { fillColor: [66, 66, 66] },
@@ -340,16 +327,12 @@ export async function POST(
 
     // 6. Build DataPoint query with filters
     const fromDate = getTimeRangeDate(timeRange);
-    const whereClause: any = {
+    const whereClause: Prisma.DataPointWhereInput = {
       datasetId: datasetId,
     };
 
     if (fromDate) {
       whereClause.timestamp = { gte: fromDate };
-    }
-
-    if (filters?.sensorType) {
-      whereClause.sensorType = filters.sensorType;
     }
 
     if (filters?.sensorId) {
@@ -375,26 +358,18 @@ export async function POST(
       take: limitPoints,
       select: {
         timestamp: true,
-        x: true,
-        y: true,
-        z: true,
-        value: true,
-        unit: true,
         sensorId: true,
-        sensorType: true,
+        value: true,
+        metadata: true,
       },
     });
 
     // 7. Format data for export
     const exportData: DataPointExport[] = dataPoints.map((dp) => ({
       timestamp: dp.timestamp.toISOString(),
-      x: dp.x,
-      y: dp.y,
-      z: dp.z,
-      value: dp.value,
-      unit: dp.unit,
       sensorId: dp.sensorId,
-      sensorType: dp.sensorType,
+      value: dp.value,
+      metadata: dp.metadata,
     }));
 
     // 8. Get insights if requested (PRO only)
@@ -446,7 +421,7 @@ export async function POST(
           includeInsights,
           dataPointsCount: exportData.length,
           fileName,
-        },
+        } as Prisma.InputJsonValue,
         ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
         userAgent: request.headers.get("user-agent"),
       },

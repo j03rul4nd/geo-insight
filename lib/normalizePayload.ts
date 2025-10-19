@@ -77,12 +77,14 @@ function applyTransforms(
  * 
  * @param payload - Objeto JSON del mensaje MQTT
  * @param mapping - Configuración de paths y transformaciones
+ * @param datasetId - ID del dataset al que pertenece este punto
  * @returns DataPoint normalizado o null si falla
  */
 export function normalizePayload(
   payload: any,
-  mapping: MappingConfig
-): Omit<DataPoint, 'id' | 'createdAt'> | null {
+  mapping: MappingConfig,
+  datasetId: string
+): Omit<DataPoint, 'id'> | null {
   try {
     // Campos obligatorios
     const value = getNestedValue(payload, mapping.valuePath);
@@ -97,8 +99,8 @@ export function normalizePayload(
     }
     
     // Campos opcionales
-    const x = getNestedValue(payload, mapping.xPath) ?? 0;
-    const y = getNestedValue(payload, mapping.yPath) ?? 0;
+    const x = getNestedValue(payload, mapping.xPath);
+    const y = getNestedValue(payload, mapping.yPath);
     const z = getNestedValue(payload, mapping.zPath);
     const sensorId = getNestedValue(payload, mapping.sensorIdPath);
     const sensorType = getNestedValue(payload, mapping.sensorTypePath);
@@ -110,20 +112,25 @@ export function normalizePayload(
       mapping.transforms?.value
     );
     
+    // Construir metadata solo con campos que existen
+    const metadata: DataPoint['metadata'] = {
+      originalPayload: payload,
+      mappingApplied: true,
+    };
+    
+    if (x !== undefined) metadata.x = Number(x);
+    if (y !== undefined) metadata.y = Number(y);
+    if (z !== undefined) metadata.z = Number(z);
+    if (sensorType) metadata.sensorType = String(sensorType);
+    if (unit) metadata.unit = String(unit);
+    
     // Construir el DataPoint normalizado
-    const normalizedPoint: Omit<DataPoint, 'id' | 'createdAt'> = {
+    const normalizedPoint: Omit<DataPoint, 'id'> = {
+      datasetId,
       value: Number(transformedValue),
-      x: Number(x),
-      y: Number(y),
-      z: z !== undefined ? Number(z) : null,
-      sensorId: sensorId ? String(sensorId) : null,
-      sensorType: sensorType ? String(sensorType) : null,
-      unit: unit ? String(unit) : null,
+      sensorId: sensorId ? String(sensorId) : 'unknown',
       timestamp: new Date(timestamp),
-      metadata: {
-        originalPayload: payload,
-        mappingApplied: true,
-      },
+      metadata,
     };
     
     return normalizedPoint;
