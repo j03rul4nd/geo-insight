@@ -1,6 +1,6 @@
 // hooks/useDatasets.ts
 import { useState, useEffect, useCallback } from 'react';
-import { Dataset } from '@/types/Datasets';
+import { Dataset, ViewType } from '@/types/Datasets';
 
 interface UseDatasets {
   datasets: Dataset[];
@@ -18,6 +18,9 @@ interface CreateDatasetPayload {
   description?: string;
   source: Dataset['source'];
   
+  // 🆕 View type - cómo visualizar los datos
+  viewType?: ViewType;
+  
   // MQTT specific
   mqttBroker?: string;
   mqttTopic?: string;
@@ -33,6 +36,12 @@ interface CreateDatasetPayload {
   // Webhook specific
   webhookFormat?: 'json' | 'form' | 'xml';
   webhookSecret?: string;
+  
+  // 🆕 Bounding box para ThreeJS
+  boundingBox?: {
+    min: { x: number; y: number; z: number };
+    max: { x: number; y: number; z: number };
+  };
 }
 
 interface MQTTConfig {
@@ -66,7 +75,15 @@ interface MQTTTestResult {
   };
 }
 
-export function useDatasets(): UseDatasets {
+interface FetchDatasetsOptions {
+  page?: number;
+  limit?: number;
+  status?: Dataset['status'];
+  source?: Dataset['source'];
+  viewType?: ViewType; // 🆕 Filtrar por tipo de visualización
+}
+
+export function useDatasets(options?: FetchDatasetsOptions): UseDatasets {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +93,18 @@ export function useDatasets(): UseDatasets {
       setLoading(true);
       setError(null);
       
-      const res = await fetch('/api/datasets', {
+      // 🆕 Construir query params incluyendo viewType
+      const params = new URLSearchParams();
+      if (options?.page) params.set('page', options.page.toString());
+      if (options?.limit) params.set('limit', options.limit.toString());
+      if (options?.status) params.set('status', options.status);
+      if (options?.source) params.set('source', options.source);
+      if (options?.viewType) params.set('viewType', options.viewType);
+      
+      const queryString = params.toString();
+      const url = `/api/datasets${queryString ? `?${queryString}` : ''}`;
+      
+      const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json' }
       });
 
@@ -93,7 +121,7 @@ export function useDatasets(): UseDatasets {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [options?.page, options?.limit, options?.status, options?.source, options?.viewType]);
 
   useEffect(() => {
     fetchDatasets();
@@ -101,10 +129,18 @@ export function useDatasets(): UseDatasets {
 
   const createDataset = async (payload: CreateDatasetPayload): Promise<Dataset> => {
     try {
+      // 🆕 Validar viewType antes de enviar
+      if (payload.viewType && !['gis', 'threejs'].includes(payload.viewType)) {
+        throw new Error('viewType must be either "gis" or "threejs"');
+      }
+
       const res = await fetch('/api/datasets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          viewType: payload.viewType || 'gis' // Default a GIS
+        })
       });
 
       if (!res.ok) {
@@ -114,10 +150,19 @@ export function useDatasets(): UseDatasets {
 
       const newDataset = await res.json();
       setDatasets(prev => [...prev, newDataset]);
+      
+      console.log('✅ Dataset created:', {
+        id: newDataset.id,
+        name: newDataset.name,
+        viewType: newDataset.viewType,
+        source: newDataset.source
+      });
+      
       return newDataset;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create dataset';
       setError(message);
+      console.error('❌ Failed to create dataset:', err);
       throw err;
     }
   };
@@ -133,6 +178,7 @@ export function useDatasets(): UseDatasets {
       }
 
       setDatasets(prev => prev.filter(ds => ds.id !== id));
+      console.log('🗑️ Dataset deleted:', id);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete dataset';
       setError(message);
@@ -154,6 +200,7 @@ export function useDatasets(): UseDatasets {
 
       const updated = await res.json();
       setDatasets(prev => prev.map(ds => ds.id === id ? updated : ds));
+      console.log('📦 Dataset archived:', id);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to archive dataset';
       setError(message);
@@ -163,7 +210,7 @@ export function useDatasets(): UseDatasets {
 
   /**
    * Prueba conexión MQTT
-   * Usa el endpoint /api/settings/integrations/mqtt que has sobrescrito
+   * Usa el endpoint /api/settings/integrations/mqtt
    */
   const testMQTTConnection = async (config: MQTTConfig): Promise<MQTTTestResult> => {
     try {

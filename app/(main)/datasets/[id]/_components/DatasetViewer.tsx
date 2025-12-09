@@ -16,6 +16,15 @@ import { useDataset } from '@/hooks/useDataset';
 import { useRealtimeDataPoints } from '@/hooks/useRealtimeDataPoints'; 
 import Viewer3DPanel from '@/components/Viewer3DPanel/Viewer3DPanel';
 
+import MapStyleControl, { MAP_STYLES, type MapStyle } from '@/components/ViewerGISPanel//components/MapStyleControl';
+import ViewerGISPanel from '@/components/ViewerGISPanel/ViewerGISPanel';
+import type { ViewerGISPanelRef } from '@/components/ViewerGISPanel/ViewerGISPanel';
+
+import AssetsList from '@/components/AssetsList/index';
+
+import RealTimeMetrics from '@/components/RealTimeMetrics/RealTimeMetrics';
+
+import LayersList, { type VisualizationLayer } from '@/components/LayersList';
 
 import MappingConfigurator from '@/components/MappingConfigurator/MappingConfigurator';
 import { useDatasetMapping } from '@/hooks/useDatasetMapping';
@@ -24,24 +33,6 @@ import { useDatasetMapping } from '@/hooks/useDatasetMapping';
 // ============================================
 // TYPES 
 // ============================================
-
-interface Layer {
-  id: string;
-  datasetId: string;
-  name: string;
-  enabled: boolean;
-  order: number;
-  colorScheme: {
-    type: 'solid' | 'gradient' | 'heatmap';
-    color?: string;
-    low?: string;
-    high?: string;
-  };
-  opacity: number;
-  pointSize: number;
-  filterQuery?: string;
-}
-
 interface DataPoint {
   id: string;
   datasetId: string;
@@ -57,7 +48,6 @@ interface DataPoint {
     [key: string]: any; // Otros campos custom
   };
 }
-
 interface Alert {
   id: string;
   datasetId: string;
@@ -69,8 +59,6 @@ interface Alert {
   thresholdValue: number;
   triggeredAt: Date | string;
 }
-
-
 interface Insight {
   id: string;
   type: 'anomaly' | 'prediction' | 'optimization' | 'pattern';
@@ -82,7 +70,6 @@ interface Insight {
   createdAt: Date;
   isResolved: boolean;
 }
-
 interface Activity {
   id: string;
   action: string;
@@ -95,70 +82,6 @@ interface Activity {
 // ============================================
 // MOCK HOOKS (Replace with real ones)
 // ============================================
-
-const useLayers = (datasetId: string) => {
-  const [layers, setLayers] = useState<Layer[]>([
-    {
-      id: 'layer-1',
-      datasetId,
-      name: 'All Sensors',
-      enabled: true,
-      order: 0,
-      colorScheme: { type: 'heatmap', low: '#3b82f6', high: '#ef4444' },
-      opacity: 1,
-      pointSize: 1
-    },
-    {
-      id: 'layer-2',
-      datasetId,
-      name: 'Temperature Only',
-      enabled: false,
-      order: 1,
-      colorScheme: { type: 'solid', color: '#f59e0b' },
-      opacity: 1,
-      pointSize: 1.2
-    },
-    {
-      id: 'layer-3',
-      datasetId,
-      name: 'Pressure Only',
-      enabled: false,
-      order: 2,
-      colorScheme: { type: 'solid', color: '#8b5cf6' },
-      opacity: 1,
-      pointSize: 1.2
-    }
-  ]);
-
-  return {
-    data: layers,
-    isLoading: false,
-    error: null,
-    setLayers
-  };
-};
-
-const useLayerMutations = (datasetId: string) => {
-  const { setLayers } = useLayers(datasetId);
-
-  const toggleLayer = useCallback((layerId: string) => {
-    setLayers((prev: Layer[]) => 
-      prev.map(l => l.id === layerId ? { ...l, enabled: !l.enabled } : l)
-    );
-  }, [setLayers]); 
-
-  const updateOpacity = useCallback((layerId: string, opacity: number) => {
-    setLayers((prev: Layer[]) => 
-      prev.map(l => l.id === layerId ? { ...l, opacity: opacity / 100 } : l)
-    );
-  }, [setLayers]);
-
-  return {
-    toggleLayer,
-    updateOpacity,
-    isPending: false
-  };
-};
 
 const useAlerts = (datasetId?: string) => {
   return {
@@ -362,7 +285,6 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
     maxReconnectAttempts: 5,
   });
 
-
   // ✅ AÑADIR: Auto-abrir configurador si no hay mapping
   useEffect(() => {
     // Si no hay mapping Y hay mensajes raw Y el configurador no está abierto
@@ -392,9 +314,6 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
     return success;
   };
 
- 
-  const { data: layers } = useLayers(datasetId);
-  const { toggleLayer, updateOpacity } = useLayerMutations(datasetId);
   const { data: alerts } = useAlerts(datasetId);
   const { acknowledgeAlert, resolveAlert } = useAlertMutations();
   const { data: insights } = useInsights(datasetId);
@@ -412,38 +331,21 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
   const [sparklineData, setSparklineData] = useState<number[][]>([]);
   const [colorMode, setColorMode] = useState<'heatmap' | 'sensor-type'>('heatmap');
 
+  const [enabledLayers, setEnabledLayers] = useState<VisualizationLayer[]>([]);
+
+
+  // 🎯 Estados para GIS Map
+  const [currentMapStyle, setCurrentMapStyle] = useState('streets');
+  const [is3DTerrainEnabled, setIs3DTerrainEnabled] = useState(false);
+  const [isGISMapReady, setIsGISMapReady] = useState(false);
+  const gisViewerRef = useRef<ViewerGISPanelRef>(null);
+
   // ============================================
   // COMPUTED VALUES
   // ============================================
 
   // Combinar alerts de diferentes fuentes si es necesario
   const allAlerts = [...(realtimeAlerts || []), ...(alerts || [])];
-  
-  // Sensor statistics from current data points
-  const sensorStats = useMemo(() => {
-    if (!dataPoints || dataPoints.length === 0) return null;
-    
-    const bySensorType: Record<string, { count: number; sum: number; values: number[] }> = {};
-    
-    dataPoints.forEach(point => {
-      // sensorType ahora está en metadata
-      const type = point.metadata?.sensorType || 'unknown';
-      if (!bySensorType[type]) {
-        bySensorType[type] = { count: 0, sum: 0, values: [] };
-      }
-      bySensorType[type].count++;
-      bySensorType[type].sum += point.value;
-      bySensorType[type].values.push(point.value);
-    });
-
-    return Object.entries(bySensorType).map(([type, data]) => ({
-      type,
-      count: data.count,
-      avg: data.sum / data.count,
-      min: Math.min(...data.values),
-      max: Math.max(...data.values)
-    }));
-  }, [dataPoints]);
 
   // Value range for heatmap coloring
   const valueRange = useMemo(() => {
@@ -456,8 +358,79 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
   }, [dataPoints]);
 
   // ============================================
-  // HANDLERS
+  // MAP HANDLERS (GIS)
   // ============================================
+
+  /**
+   * 🎨 Cambiar el estilo del mapa
+   * Valida que el MapManager esté listo antes de cambiar el estilo
+   */
+    const handleMapStyleChange = useCallback((style: MapStyle) => {
+      const mapManager = gisViewerRef.current?.mapManager;
+      
+      // Validación crítica
+      if (!mapManager || !mapManager.isLoaded()) {
+        console.warn('⚠️ MapManager is not ready');
+        return;
+      }
+
+      setCurrentMapStyle(style.id);
+      mapManager.changeMapStyle(style.url, {
+        enable3D: style.is3D && is3DTerrainEnabled
+      });
+    }, [is3DTerrainEnabled]);
+
+  // ✅ Toggle terreno 3D
+  const handleToggle3D = useCallback((enabled: boolean) => {
+    const mapManager = gisViewerRef.current?.mapManager;
+    
+    if (!mapManager || !mapManager.isLoaded()) {
+      console.warn('⚠️ MapManager is not ready');
+      return;
+    }
+
+    setIs3DTerrainEnabled(enabled);
+    
+    if (enabled) {
+      mapManager.enable3DTerrain(1.5);
+    } else {
+      mapManager.disable3DTerrain();
+    }
+  }, []);
+
+  // ✅ Callback cuando el mapa está listo
+  const handleGISMapReady = useCallback(() => {
+    console.log('✅ GIS Map is ready');
+    setIsGISMapReady(true);
+  }, []);
+
+
+  /**
+   * Callback cuando las enabled layers cambian
+   * Esto nos permite mantener sincronizadas las layers
+   * con el visualizador 3D/GIS sin manejar el estado nosotros
+   */
+  const handleEnabledLayersChange = useCallback((layers: VisualizationLayer[]) => {
+    console.log('✅ Enabled layers updated:', layers.length);
+    setEnabledLayers(layers);
+  }, []);
+
+  /**
+   * Callback cuando todas las layers cambian
+   * Útil para logging o analytics
+   */
+  const handleLayersUpdate = useCallback((layers: VisualizationLayer[]) => {
+    console.log('📊 Total layers:', layers.length);
+  }, []);
+
+  /**
+   * Callback cuando una layer es toggled
+   */
+  const handleLayerToggle = useCallback((layerId: string, enabled: boolean) => {
+    console.log(`🔄 Layer ${layerId} ${enabled ? 'enabled' : 'disabled'}`);
+  }, []);
+
+
 
   const runAIAnalysis = async () => {
     setShowAIModal(true);
@@ -491,6 +464,10 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
     return `${hours}h ago`;
   };
 
+
+  const isGISView = dataset?.viewType === 'gis';
+  const is3DView = dataset?.viewType === 'threejs' || !dataset?.viewType; 
+
   // ============================================
   // ESTADOS DE LA UI
   // ============================================
@@ -501,12 +478,12 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
   // RENDER
   // ============================================
 
-  if (datasetLoading || !dataset || !layers)  {
+  if (datasetLoading || !dataset )  {
     return (
       <DatasetLoader
         datasetLoading={datasetLoading}
         dataset={dataset}
-        layers={layers}
+        layers={enabledLayers}
       />
     );
   }
@@ -691,107 +668,32 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
                           
 
                           {/* Layers */}
-                          <div className="mb-6">
-                            <h3 className="text-sm font-bold mb-3">Layers</h3>
-                            <div className="space-y-2">
-                              {layers.map(layer => (
-                                <div key={layer.id} className="bg-[#27272a] rounded p-2">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <input 
-                                      type="checkbox" 
-                                      checked={layer.enabled}
-                                      onChange={() => toggleLayer(layer.id)}
-                                      className="w-4 h-4"
-                                    />
-                                    <span className="text-xs flex-1">{layer.name}</span>
-                                  </div>
-                                  <input 
-                                    type="range" 
-                                    min="0" 
-                                    max="100" 
-                                    value={layer.opacity * 100}
-                                    onChange={(e) => updateOpacity(layer.id, parseInt(e.target.value))}
-                                    className="w-full h-1"
-                                    disabled={!layer.enabled}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                          <LayersList
+                            showStats={true}             
+                            showAdvancedFilters={true} 
+                            datasetId={datasetId}
+                            collapsed={leftPanelCollapsed}
+                            onLayerSelect={(layer) => {
+                              console.log('Selected layer:', layer);
+                              setSelectedPoint(null);
+                            }}
+                            // 🎯 Callbacks para sincronizar estado
+                            onEnabledLayersChange={handleEnabledLayersChange}
+                            onLayersUpdate={handleLayersUpdate}
+                            onLayerToggle={handleLayerToggle}
+                            className="mb-6"
+                          />
 
-                          {/* Time Range 
-                          <div className="mb-6">
-                            <h3 className="text-sm font-bold mb-3">Time Range</h3>
-                            <div className="grid grid-cols-2 gap-2">
-                              {TIME_RANGE_OPTIONS.map(option => (
-                                <button 
-                                  key={option.value}
-                                  onClick={() => changeRange(option.value)}
-                                  className={`text-xs py-2 rounded ${
-                                    range === option.value ? 'bg-[#3b82f6] text-white' : 'bg-[#27272a]'
-                                  }`}
-                                >
-                                  {option.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>*/}
 
-                          {/* Sensor Filters */}
-                          {!leftPanelCollapsed && (
-                            <div className="mb-6">
-                              <h3 className="text-sm font-bold mb-3">Sensor Filters</h3>
-                              
-                              {/* Filter by Sensor Type */}
-                              <div className="mb-3">
-                                <label className="text-xs text-gray-400 mb-1 block">Sensor Type</label>
-                                <select
-                                  value={dataPointsFilters.sensorType || ''}
-                                  onChange={(e) => updateDataPointsFilters({ 
-                                    sensorType: e.target.value || undefined 
-                                  })}
-                                  className="w-full bg-[#27272a] text-xs py-2 px-2 rounded border border-[#3f3f46] focus:border-[#3b82f6] outline-none"
-                                >
-                                  <option value="">All Types</option>
-                                  {sensorStats?.map(sensor => (
-                                    <option key={sensor.type} value={sensor.type}>
-                                      {sensor.type} ({sensor.count})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {/* Clear Filters Button */}
-                              {(dataPointsFilters.sensorType || dataPointsFilters.sensorId) && (
-                                <button
-                                  onClick={clearDataPointsFilters}
-                                  className="w-full text-xs py-2 bg-[#27272a] hover:bg-[#3f3f46] rounded transition-colors"
-                                >
-                                  Clear Filters
-                                </button>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Sensor Stats */}
-                          {sensorStats && (
-                            <div className="mb-6">
-                              <h3 className="text-sm font-bold mb-3">Sensors by Type</h3>
-                              <div className="space-y-2">
-                                {sensorStats.map(sensor => (
-                                  <div key={sensor.type} className="bg-[#27272a] rounded p-2">
-                                    <div className="flex justify-between items-center mb-1">
-                                      <span className="text-xs font-bold capitalize">{sensor.type}</span>
-                                      <span className="text-xs text-gray-400">{sensor.count}</span>
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                      Avg: {sensor.avg.toFixed(1)} | Range: {sensor.min.toFixed(1)} - {sensor.max.toFixed(1)}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                            {/* AssetsList Component */}
+                            <AssetsList
+                              dataPoints={dataPoints}
+                              filters={dataPointsFilters}
+                              onFilterChange={updateDataPointsFilters}
+                              onClearFilters={clearDataPointsFilters}
+                              onPointSelect={setSelectedPoint}
+                              collapsed={leftPanelCollapsed}
+                            />
 
                           {/* AI Analysis */}
                           <div className="mb-6">
@@ -833,60 +735,67 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
                     </div>
           </div>
 
-        {/* ============================================
-            CENTER PANEL - 3D Viewer
-            ============================================ */}
-        <Viewer3DPanel
-          dataPoints={dataPoints}
-          layers={layers}
-          selectedPoint={selectedPoint}
-          onPointSelect={setSelectedPoint}  // ← Callback simplificado
-          colorMode={colorMode}
-          valueRange={valueRange}
-          isLive={isLive}
-          onViewChange={(view) => {
-            console.log('View changed to:', view);
-          }}
-        />
+          {/* ============================================
+              CENTER PANEL - Viewer (3D o GIS según viewType)
+              ============================================ */}
+          {isGISView ? (
+              <ViewerGISPanel
+                ref={gisViewerRef} 
+                dataPoints={dataPoints}
+                layers={enabledLayers}
+                selectedPoint={selectedPoint}
+                onPointSelect={setSelectedPoint}
+                colorMode={colorMode}
+                valueRange={valueRange}
+                isLive={isLive}
+                onViewChange={(view) => {
+                  console.log('GIS View changed to:', view);
+                }}
+                onMapReady={handleGISMapReady}
+              />
+          ) : (
+            <Viewer3DPanel
+              dataPoints={dataPoints}
+              layers={enabledLayers}
+              selectedPoint={selectedPoint}
+              onPointSelect={setSelectedPoint}
+              colorMode={colorMode}
+              valueRange={valueRange}
+              isLive={isLive}
+              onViewChange={(view) => {
+                console.log('3D View changed to:', view);
+              }}
+            />
+          )}
 
         {/* ============================================
             RIGHT PANEL - Alerts + Activity
             ============================================ */}
         <div className="w-[280px] bg-[#18181b] border-l border-[#27272a] overflow-y-auto p-4">
-          {/* Real-time Metrics Sparklines */}
-          <div className="mb-6">
-            <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-              <Activity size={16} />
-              Real-time Metrics
-            </h3>
-            <div className="space-y-3">
-              {['Active AGVs', 'Deliveries/hour', 'Avg Speed'].map((metric, i) => (
-                <div key={i} className="bg-[#27272a] rounded p-3">
-                  <div className="text-xs text-gray-400 mb-2">{metric}</div>
-                  <div className="h-12 flex items-end justify-between">
-                    {sparklineData[i] && sparklineData[i].length > 0 ? (
-                      sparklineData[i].map((height, j) => (
-                        <div 
-                          key={j} 
-                          className="w-1 bg-[#10b981] rounded-t"
-                          style={{ height: `${height}%` }}
-                        />
-                      ))
-                    ) : (
-                      // Placeholder durante SSR
-                      [...Array(20)].map((_, j) => (
-                        <div 
-                          key={j} 
-                          className="w-1 bg-[#27272a] rounded-t"
-                          style={{ height: '50%' }}
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
+          
+          {/* Control de estilo de mapa - SOLO para GIS */}
+          {isGISView && (
+             <div className="mb-6">
+              <h3 className="text-sm font-bold mb-3">Map Style</h3>
+              <MapStyleControl
+              currentStyleId={currentMapStyle}
+              onStyleChange={handleMapStyleChange}
+              is3DEnabled={is3DTerrainEnabled}
+              onToggle3D={handleToggle3D}
+              disabled={!isGISMapReady}
+            />
             </div>
-          </div>
+          )}
+
+          
+          {/* Real-time Metrics Sparklines */}
+          <RealTimeMetrics
+              datasetId={datasetId}
+              dataPoints={dataPoints}
+              collapsed={leftPanelCollapsed}
+              className="mb-6"
+            />
+
 
           {/* Alerts Section */}
           <div className="mb-6">

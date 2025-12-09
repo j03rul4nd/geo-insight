@@ -1,36 +1,6 @@
 /**
  * LAYER DETAIL ENDPOINT
  * 
- * PATCH - OBJETIVO:
- * Actualizar configuración de una capa existente.
- * 
- * PATCH - MISIÓN:
- * - Validar ownership (dataset.userId match)
- * - Permitir actualizar: name, enabled, colorScheme, opacity, pointSize, filterQuery
- * - NO permitir cambiar datasetId u order aquí
- * - Actualizar Layer.updatedAt
- * 
- * DELETE - OBJETIVO:
- * Eliminar capa de visualización.
- * 
- * DELETE - MISIÓN:
- * - Validar ownership
- * - Eliminar Layer
- * - Reordenar layers restantes (ajustar order)
- * 
- * USADO POR:
- * - Layer settings modal en /datasets/[id]
- * - Toggle enable/disable layer
- * - Botón "Delete Layer"
- * 
- * PRISMA MODELS:
- * - Layer
- * - Dataset (para validar ownership)
- */
-
-/**
- * LAYER DETAIL ENDPOINT
- * 
  * GET /api/datasets/[id]/layers/[layerId] - Obtener detalles de capa
  * PATCH /api/datasets/[id]/layers/[layerId] - Actualizar capa
  * DELETE /api/datasets/[id]/layers/[layerId] - Eliminar capa
@@ -43,7 +13,72 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// Schema de validación para colorScheme
+// ============================================
+// SCHEMAS DE VALIDACIÓN
+// ============================================
+
+const markerConfigSchema = z.object({
+  iconName: z.string().optional(),
+  iconLibrary: z.enum(['lucide', 'custom']).optional(),
+  customSvg: z.string().optional(),
+}).optional();
+
+const model3dConfigSchema = z.object({
+  scale: z.array(z.number()).length(3).optional(),
+  rotation: z.array(z.number()).length(3).optional(),
+  translate: z.array(z.number()).length(3).optional(),
+  orientation: z.enum(['map', 'viewport', 'auto']).optional(),
+  anchor: z.enum(['center', 'bottom', 'top']).optional(),
+  autoRotate: z.boolean().optional(),
+  autoRotateOffset: z.number().optional(),
+  minZoom: z.number().optional(),
+  maxZoom: z.number().optional(),
+  scaleWithZoom: z.boolean().optional(),
+  scaleRange: z.array(z.number()).length(2).optional(),
+  animations: z.object({
+    idle: z.string().optional(),
+    moving: z.string().optional(),
+    speed: z.number().optional(),
+  }).optional(),
+  castShadows: z.boolean().optional(),
+  receiveShadows: z.boolean().optional(),
+  metalness: z.number().optional(),
+  roughness: z.number().optional(),
+  emissiveIntensity: z.number().optional(),
+  frustumCulling: z.boolean().optional(),
+  lodEnabled: z.boolean().optional(),
+  lodDistances: z.array(z.number()).optional(),
+  clickable: z.boolean().optional(),
+  hoverable: z.boolean().optional(),
+  altitudeMode: z.enum(['absolute', 'relative', 'clampToGround']).optional(),
+  heightOffset: z.number().optional(),
+}).optional();
+
+const shapeConfigSchema = z.object({
+  type: z.enum(['circle', 'polygon', 'rectangle', 'custom']),
+  coordinates: z.array(z.array(z.number())).optional(),
+  radius: z.number().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  fillColor: z.string().optional(),
+  strokeColor: z.string().optional(),
+  strokeWidth: z.number().optional(),
+}).optional();
+
+const borderConfigSchema = z.object({
+  width: z.number().min(0),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  style: z.enum(['solid', 'dashed', 'dotted']),
+}).optional();
+
+const shadowConfigSchema = z.object({
+  enabled: z.boolean(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  blur: z.number().min(0),
+  offsetX: z.number(),
+  offsetY: z.number(),
+}).optional();
+
 const colorSchemeSchema = z.object({
   type: z.enum(['gradient', 'solid', 'heatmap', 'categorical']),
   low: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
@@ -53,14 +88,125 @@ const colorSchemeSchema = z.object({
   thresholds: z.array(z.number()).optional(),
 });
 
-// Schema de validación para actualizar capa
+const colorRuleSchema = z.object({
+  condition: z.string(),
+  colorScheme: colorSchemeSchema,
+  priority: z.number().optional(),
+});
+
+const scaleRuleSchema = z.object({
+  condition: z.string(),
+  scale: z.number().min(0.1).max(10),
+  priority: z.number().optional(),
+});
+
+const visibilityRuleSchema = z.object({
+  condition: z.string(),
+  visible: z.boolean(),
+  priority: z.number().optional(),
+});
+
+const trailColorRuleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  priority: z.number(),
+  applicationType: z.enum(['entire-trail', 'current-segment', 'future-segments', 'historical']),
+  enabled: z.boolean(),
+  description: z.string().optional(),
+  condition: z.string(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+});
+
+const trailGradientConfigSchema = z.object({
+  enabled: z.boolean(),
+  fadeOldSegments: z.boolean().optional(),
+  fadeStartAge: z.number().optional(),
+  fadeEndAge: z.number().optional(),
+  minOpacity: z.number().min(0).max(1).optional(),
+}).optional();
+
+const trailValidationConfigSchema = z.object({
+  enableValidation: z.boolean().optional(),
+  minDistanceThreshold: z.number().optional(),
+  maxTimeBetweenPoints: z.number().optional(),
+}).optional();
+
+const trailPointsConfigSchema = z.object({
+  showHistoricalPoints: z.boolean().optional(),
+  pointInterval: z.number().optional(),
+  pointSize: z.number().optional(),
+  pointOpacity: z.number().min(0).max(1).optional(),
+  fadeWithAge: z.boolean().optional(),
+}).optional();
+
+const trailColorSchemeSchema = z.object({
+  type: z.enum(['static', 'gradient', 'speed-based']),
+  staticColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  gradient: z.object({
+    stops: z.array(z.object({
+      value: z.number(),
+      color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    })),
+  }).optional(),
+  speedBased: z.object({
+    lowSpeed: z.object({
+      threshold: z.number(),
+      color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    }),
+    mediumSpeed: z.object({
+      threshold: z.number(),
+      color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    }),
+    highSpeed: z.object({
+      threshold: z.number(),
+      color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    }),
+  }).optional(),
+}).optional();
+
+// Schema para actualizar capa (todos los campos opcionales)
 const updateLayerSchema = z.object({
+  // Basic info
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional().nullable(),
   enabled: z.boolean().optional(),
-  colorScheme: colorSchemeSchema.optional(),
+  
+  // Asset type
+  assetType: z.enum(['point', 'moving', 'area']).optional(),
+  
+  // Render configuration
+  renderType: z.enum(['marker', 'icon', 'image', 'model3d', 'shape']).optional(),
+  markerConfig: markerConfigSchema,
+  imageUrl: z.string().url().optional().nullable(),
+  modelUrl: z.string().url().optional().nullable(),
+  model3dConfig: model3dConfigSchema,
+  shapeConfig: shapeConfigSchema,
+  
+  // Style
+  colorScheme: colorSchemeSchema.optional().nullable(),
   opacity: z.number().min(0).max(1).optional(),
   pointSize: z.number().min(0.1).max(10).optional(),
+  borderConfig: borderConfigSchema,
+  shadowConfig: shadowConfigSchema,
+  
+  // Dynamic behavior
+  colorRules: z.array(colorRuleSchema).optional().nullable(),
+  scaleRules: z.array(scaleRuleSchema).optional().nullable(),
+  visibilityRules: z.array(visibilityRuleSchema).optional().nullable(),
+  
+  // Trail configuration
+  showTrail: z.boolean().optional(),
+  trailLength: z.number().int().min(1).max(1000).optional(),
+  trailWidth: z.number().min(0.1).max(20).optional(),
+  trailOpacity: z.number().min(0).max(1).optional(),
+  trailColorMode: z.enum(['static', 'dynamic', 'gradient', 'rules']).optional(),
+  trailColorScheme: trailColorSchemeSchema,
+  trailColorRules: z.array(trailColorRuleSchema).optional().nullable(),
+  trailGradientConfig: trailGradientConfigSchema,
+  trailValidationConfig: trailValidationConfigSchema,
+  trailPointsConfig: trailPointsConfigSchema,
+  
+  // Filter
   filterQuery: z.string().max(1000).optional().nullable(),
 });
 
@@ -72,7 +218,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string; layerId: string }> }
 ) {
   try {
-    // 1. Autenticación
     const { userId } = await auth();
     
     if (!userId) {
@@ -84,7 +229,7 @@ export async function GET(
 
     const { id: datasetId, layerId } = await params;
 
-    // 2. Validar ownership del dataset y obtener layer
+    // Validar ownership del dataset y obtener layer
     const layer = await prisma.layer.findFirst({
       where: {
         id: layerId,
@@ -98,6 +243,7 @@ export async function GET(
           select: {
             id: true,
             name: true,
+            viewType: true,
             userId: true,
           },
         },
@@ -111,7 +257,7 @@ export async function GET(
       );
     }
 
-    // 3. Devolver datos de la capa
+    // Devolver datos de la capa
     const { dataset, ...layerData } = layer;
 
     return NextResponse.json({
@@ -120,6 +266,7 @@ export async function GET(
         ...layerData,
         datasetId: dataset.id,
         datasetName: dataset.name,
+        datasetViewType: dataset.viewType,
       },
     });
 
@@ -146,7 +293,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; layerId: string }> }
 ) {
   try {
-    // 1. Autenticación
     const { userId } = await auth();
     
     if (!userId) {
@@ -158,7 +304,7 @@ export async function PATCH(
 
     const { id: datasetId, layerId } = await params;
 
-    // 2. Validar ownership del dataset
+    // Validar ownership del dataset
     const dataset = await prisma.dataset.findFirst({
       where: {
         id: datasetId,
@@ -176,7 +322,7 @@ export async function PATCH(
       );
     }
 
-    // 3. Verificar que la capa existe y pertenece al dataset
+    // Verificar que la capa existe y pertenece al dataset
     const existingLayer = await prisma.layer.findFirst({
       where: {
         id: layerId,
@@ -185,6 +331,7 @@ export async function PATCH(
       select: {
         id: true,
         name: true,
+        renderType: true,
       },
     });
 
@@ -195,7 +342,7 @@ export async function PATCH(
       );
     }
 
-    // 4. Parse y validar body
+    // Parse y validar body
     const body = await request.json();
     const validationResult = updateLayerSchema.safeParse(body);
 
@@ -211,7 +358,7 @@ export async function PATCH(
 
     const data = validationResult.data;
 
-    // 5. Validar filterQuery si se está actualizando
+    // Validar filterQuery si se está actualizando
     if (data.filterQuery !== undefined && data.filterQuery !== null) {
       const dangerousKeywords = [
         'DROP', 'DELETE', 'UPDATE', 'INSERT', 'TRUNCATE', 
@@ -234,9 +381,32 @@ export async function PATCH(
       }
     }
 
-    // 6. Actualizar capa en transacción
+    // Validaciones específicas por renderType
+    const newRenderType = data.renderType || existingLayer.renderType;
+    
+    if (newRenderType === 'image' && data.imageUrl === null) {
+      return NextResponse.json(
+        { error: 'imageUrl cannot be null when renderType is "image"' },
+        { status: 400 }
+      );
+    }
+
+    if (newRenderType === 'model3d' && data.modelUrl === null) {
+      return NextResponse.json(
+        { error: 'modelUrl cannot be null when renderType is "model3d"' },
+        { status: 400 }
+      );
+    }
+
+    if (newRenderType === 'shape' && data.shapeConfig === null) {
+      return NextResponse.json(
+        { error: 'shapeConfig cannot be null when renderType is "shape"' },
+        { status: 400 }
+      );
+    }
+
+    // Actualizar capa en transacción
     const updatedLayer = await prisma.$transaction(async (tx) => {
-      // Actualizar layer
       const layer = await tx.layer.update({
         where: {
           id: layerId,
@@ -245,9 +415,31 @@ export async function PATCH(
           ...(data.name !== undefined && { name: data.name }),
           ...(data.description !== undefined && { description: data.description }),
           ...(data.enabled !== undefined && { enabled: data.enabled }),
+          ...(data.assetType !== undefined && { assetType: data.assetType }),
+          ...(data.renderType !== undefined && { renderType: data.renderType }),
+          ...(data.markerConfig !== undefined && { markerConfig: data.markerConfig as any }),
+          ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
+          ...(data.modelUrl !== undefined && { modelUrl: data.modelUrl }),
+          ...(data.model3dConfig !== undefined && { model3dConfig: data.model3dConfig as any }),
+          ...(data.shapeConfig !== undefined && { shapeConfig: data.shapeConfig as any }),
           ...(data.colorScheme !== undefined && { colorScheme: data.colorScheme as any }),
           ...(data.opacity !== undefined && { opacity: data.opacity }),
           ...(data.pointSize !== undefined && { pointSize: data.pointSize }),
+          ...(data.borderConfig !== undefined && { borderConfig: data.borderConfig as any }),
+          ...(data.shadowConfig !== undefined && { shadowConfig: data.shadowConfig as any }),
+          ...(data.colorRules !== undefined && { colorRules: data.colorRules as any }),
+          ...(data.scaleRules !== undefined && { scaleRules: data.scaleRules as any }),
+          ...(data.visibilityRules !== undefined && { visibilityRules: data.visibilityRules as any }),
+          ...(data.showTrail !== undefined && { showTrail: data.showTrail }),
+          ...(data.trailLength !== undefined && { trailLength: data.trailLength }),
+          ...(data.trailWidth !== undefined && { trailWidth: data.trailWidth }),
+          ...(data.trailOpacity !== undefined && { trailOpacity: data.trailOpacity }),
+          ...(data.trailColorMode !== undefined && { trailColorMode: data.trailColorMode }),
+          ...(data.trailColorScheme !== undefined && { trailColorScheme: data.trailColorScheme as any }),
+          ...(data.trailColorRules !== undefined && { trailColorRules: data.trailColorRules as any }),
+          ...(data.trailGradientConfig !== undefined && { trailGradientConfig: data.trailGradientConfig as any }),
+          ...(data.trailValidationConfig !== undefined && { trailValidationConfig: data.trailValidationConfig as any }),
+          ...(data.trailPointsConfig !== undefined && { trailPointsConfig: data.trailPointsConfig as any }),
           ...(data.filterQuery !== undefined && { filterQuery: data.filterQuery }),
           updatedAt: new Date(),
         },
@@ -305,7 +497,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; layerId: string }> }
 ) {
   try {
-    // 1. Autenticación
     const { userId } = await auth();
     
     if (!userId) {
@@ -317,7 +508,7 @@ export async function DELETE(
 
     const { id: datasetId, layerId } = await params;
 
-    // 2. Validar ownership del dataset
+    // Validar ownership del dataset
     const dataset = await prisma.dataset.findFirst({
       where: {
         id: datasetId,
@@ -335,7 +526,7 @@ export async function DELETE(
       );
     }
 
-    // 3. Obtener la capa a eliminar con su orden
+    // Obtener la capa a eliminar con su orden
     const layerToDelete = await prisma.layer.findFirst({
       where: {
         id: layerId,
@@ -355,7 +546,7 @@ export async function DELETE(
       );
     }
 
-    // 4. Eliminar capa y reordenar en transacción
+    // Eliminar capa y reordenar en transacción
     await prisma.$transaction(async (tx) => {
       // Eliminar la capa
       await tx.layer.delete({
@@ -364,7 +555,7 @@ export async function DELETE(
         },
       });
 
-      // Reordenar las capas restantes (decrementar order de las que venían después)
+      // Reordenar las capas restantes
       await tx.layer.updateMany({
         where: {
           datasetId: datasetId,

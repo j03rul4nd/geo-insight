@@ -1,3 +1,5 @@
+export type ViewType = 'gis' | 'threejs';
+
 export interface Dataset {
   id: string;
   userId: string;
@@ -5,6 +7,9 @@ export interface Dataset {
   description?: string;
   status: 'active' | 'idle' | 'error' | 'archived' | 'processing';
   source: 'csv_upload' | 'json_upload' | 'mqtt_stream' | 'webhook' | 'api';
+
+  // 🆕 View type - define cómo se visualizan los datos
+  viewType: ViewType;
 
   // MQTT config
   mqttBroker?: string;
@@ -19,33 +24,74 @@ export interface Dataset {
   // API config
   apiEndpoint?: string;
 
-  // Bounding box para renderizado 3D (estructura JSON tipada o any)
-  boundingBox?: any; // O define una estructura si está tipada, ej.: { min: { x: number; y: number; z: number }, max: { x: number; y: number; z: number } }
+  // Bounding box para renderizado 3D
+  boundingBox?: {
+    min: { x: number; y: number; z: number };
+    max: { x: number; y: number; z: number };
+  };
 
   // Estadísticas
   totalDataPoints: number;
   dataPointsToday: number;
-  lastDataReceived?: string; // ISO8601 string (DateTime en Prisma)
+  lastDataReceived?: string; // ISO8601 string
   avgUpdateFreq?: number;
 
   // Config de alertas
   alertsEnabled: boolean;
-  alertThresholds?: any; // O estructura tipada según tu backend, ejemplo: {temperature: {max: number, min: number}, vibration: {max: number}}
+  alertThresholds?: Record<string, { max?: number; min?: number }>;
 
   createdAt: string; // ISO8601
   updatedAt: string; // ISO8601
 
-
+  // Métricas calculadas (del endpoint)
   health: number;
   trend: string;
   trendPercent: number;
   activeAlertsCount: number;
+}
 
-  // Relaciones (pueden omitirse si solo representan foreign keys)
-  // dataPoints?: DataPoint[];
-  // insights?: Insight[];
-  // alerts?: Alert[];
-  // layers?: Layer[];
+export interface DataPoint {
+  id: string;
+  datasetId: string;
+  value: number;
+  sensorId: string;
+  
+  // 🆕 Coordenadas directas
+  // Para GIS: x=longitude, y=latitude, z=altitude
+  // Para ThreeJS: x, y, z en espacio cartesiano
+  x?: number;
+  y?: number;
+  z?: number;
+  
+  metadata?: Record<string, any>;
+  timestamp: string; // ISO8601
+  createdAt: string; // ISO8601
+  isLatest: boolean;
+  sensorConfigId?: string;
+}
+
+export interface DatasetMapping {
+  id: string;
+  datasetId: string;
+  
+  // Paths para mapear campos del payload
+  valuePath: string;
+  
+  // 🆕 Paths para coordenadas (flexibles según viewType)
+  xPath?: string;
+  yPath?: string;
+  zPath?: string;
+  
+  sensorIdPath?: string;
+  sensorTypePath?: string;
+  timestampPath: string;
+  unitPath?: string;
+  
+  metadata?: Record<string, any>;
+  transforms?: Record<string, any>;
+  
+  createdAt: string;
+  updatedAt: string;
 }
 
 

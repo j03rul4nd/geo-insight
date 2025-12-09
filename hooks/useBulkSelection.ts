@@ -11,112 +11,15 @@
  * - Mantener selección persistente durante filtrado (opcional)
  * - Limpiar selección automáticamente tras operaciones bulk exitosas
  * 
- * DATOS PRISMA INVOLUCRADOS:
- * - Modelo: Dataset
- * - Solo IDs, no carga datos completos
- * - Se usa con useDatasetMutations para acciones bulk
- * 
- * USO EN COMPONENTE:
- * const { 
- *   selectedIds, 
- *   toggleRow, 
- *   toggleAll, 
- *   clearSelection,
- *   getSelectedDatasets 
- * } = useBulkSelection(datasets);
- * 
- * // Checkbox en header (select all)
- * <input
- *   type="checkbox"
- *   checked={isAllSelected}
- *   indeterminate={isSomeSelected && !isAllSelected}
- *   onChange={(e) => toggleAll(e.target.checked ? datasets.map(d => d.id) : [])}
- * />
- * 
- * // Checkbox individual en cada fila
- * <input
- *   type="checkbox"
- *   checked={selectedIds.includes(dataset.id)}
- *   onChange={() => toggleRow(dataset.id)}
- * />
- * 
- * // Botón de acciones bulk (solo visible si hay selección)
- * {selectedCount > 0 && (
- *   <button onClick={() => handleBulkArchive(selectedIds)}>
- *     Archive ({selectedCount})
- *   </button>
- * )}
- * 
- * // Después de operación bulk exitosa
- * onSuccess: () => {
- *   clearSelection();
- *   toast.success(`${selectedCount} datasets archived`);
- * }
- * 
- * ESTADOS A RETORNAR:
- * {
- *   selectedIds: string[],
- *   selectedCount: number,
- *   isAllSelected: boolean,      // Todos los visibles están seleccionados
- *   isSomeSelected: boolean,     // Algunos (pero no todos) están seleccionados
- *   isNoneSelected: boolean,     // Ninguno seleccionado
- *   
- *   toggleRow: (id: string) => void,
- *   toggleAll: (ids: string[]) => void,  // Pasar array de IDs visibles actuales
- *   clearSelection: () => void,
- *   selectOnly: (ids: string[]) => void, // Reemplazar selección actual
- *   
- *   getSelectedDatasets: () => Dataset[] // Retorna objetos completos de datasets seleccionados
- * }
- * 
- * LÓGICA DE TOGGLE ALL:
- * - Si isAllSelected → clearSelection()
- * - Si !isAllSelected → seleccionar todos los IDs pasados
- * - IMPORTANTE: toggleAll recibe array de datasets VISIBLES (post-filtrado)
- * 
- * COMPORTAMIENTO CON FILTROS:
- * Opción A (Recomendado): Limpiar selección al cambiar filtros
- * Opción B: Mantener selección pero mostrar "(2 of 5 hidden by filters)"
- * 
- * VALIDACIONES:
- * - No permitir seleccionar datasets con status 'archived' (opcional)
- * - No permitir seleccionar datasets en 'processing' (opcional)
- * 
- * INTEGRACIÓN CON MUTATIONS:
- * const { bulkArchive } = useDatasetMutations();
- * 
- * const handleArchiveSelected = () => {
- *   bulkArchive.mutate(selectedIds, {
- *     onSuccess: () => {
- *       clearSelection();
- *       toast.success(`${selectedCount} datasets archived`);
- *     }
- *   });
- * };
- */
-
-/**
- * useBulkSelection.ts
- * 
- * MISIÓN:
- * Gestionar la selección múltiple de filas en la tabla de datasets mediante
- * checkboxes individuales y "select all". Proporciona helpers para acciones bulk.
- * 
- * PROPÓSITO:
- * - Permitir operaciones en masa: archive, delete, export múltiples datasets
- * - Sincronizar checkbox "select all" con estado de selección individual
- * - Mantener selección persistente durante filtrado (opcional)
- * - Limpiar selección automáticamente tras operaciones bulk exitosas
+ * 🆕 Ahora soporta filtrado por viewType: 'gis' | 'threejs'
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Dataset } from '@/types/Datasets';
-
+import { Dataset, ViewType } from '@/types/Datasets';
 
 // ============================================
 // TYPES
 // ============================================
-
 
 interface UseBulkSelectionOptions {
   /**
@@ -138,6 +41,13 @@ interface UseBulkSelectionOptions {
   disableProcessingSelection?: boolean;
   
   /**
+   * 🆕 Solo permitir seleccionar datasets de un tipo específico
+   * Útil para operaciones bulk que solo aplican a GIS o ThreeJS
+   * @default undefined (permite todos)
+   */
+  onlyViewType?: ViewType;
+  
+  /**
    * Callback cuando cambia la selección
    */
   onSelectionChange?: (selectedIds: string[]) => void;
@@ -151,6 +61,13 @@ interface UseBulkSelectionReturn {
   isSomeSelected: boolean;
   isNoneSelected: boolean;
   
+  // 🆕 Información adicional sobre selección
+  selectionStats: {
+    gisCount: number;      // Cuántos GIS seleccionados
+    threejsCount: number;  // Cuántos ThreeJS seleccionados
+    hasMixedTypes: boolean; // Si hay mezcla de tipos
+  };
+  
   // Acciones
   toggleRow: (id: string) => void;
   toggleAll: (ids: string[]) => void;
@@ -161,6 +78,7 @@ interface UseBulkSelectionReturn {
   
   // Utilities
   getSelectedDatasets: () => Dataset[];
+  getSelectedByViewType: (viewType: ViewType) => Dataset[]; // 🆕
 }
 
 // ============================================
@@ -184,6 +102,11 @@ const canSelectDataset = (
     return false;
   }
   
+  // 🆕 Filtrar por viewType si está especificado
+  if (options.onlyViewType && dataset.viewType !== options.onlyViewType) {
+    return false;
+  }
+  
   return true;
 };
 
@@ -203,6 +126,21 @@ const filterSelectableIds = (
   });
 };
 
+/**
+ * 🆕 Calcular estadísticas de selección por tipo
+ */
+const calculateSelectionStats = (selectedDatasets: Dataset[]) => {
+  const gisCount = selectedDatasets.filter(ds => ds.viewType === 'gis').length;
+  const threejsCount = selectedDatasets.filter(ds => ds.viewType === 'threejs').length;
+  const hasMixedTypes = gisCount > 0 && threejsCount > 0;
+  
+  return {
+    gisCount,
+    threejsCount,
+    hasMixedTypes
+  };
+};
+
 // ============================================
 // MAIN HOOK
 // ============================================
@@ -216,6 +154,7 @@ export function useBulkSelection(
     clearOnFilterChange = true,
     disableArchivedSelection = false,
     disableProcessingSelection = false,
+    onlyViewType,
     onSelectionChange
   } = options;
   
@@ -236,7 +175,7 @@ export function useBulkSelection(
     return datasets
       .filter(ds => canSelectDataset(ds, options))
       .map(ds => ds.id);
-  }, [datasets, disableArchivedSelection, disableProcessingSelection]);
+  }, [datasets, disableArchivedSelection, disableProcessingSelection, onlyViewType]);
   
   /**
    * Selección válida actual (filtrar IDs que ya no existen)
@@ -266,6 +205,21 @@ export function useBulkSelection(
   const isNoneSelected = useMemo(() => {
     return validSelectedIds.length === 0;
   }, [validSelectedIds.length]);
+  
+  /**
+   * 🆕 Datasets seleccionados completos (para calcular stats)
+   */
+  const selectedDatasets = useMemo(() => {
+    const selectedSet = new Set(validSelectedIds);
+    return datasets.filter(ds => selectedSet.has(ds.id));
+  }, [datasets, validSelectedIds]);
+  
+  /**
+   * 🆕 Estadísticas de selección por tipo
+   */
+  const selectionStats = useMemo(() => {
+    return calculateSelectionStats(selectedDatasets);
+  }, [selectedDatasets]);
   
   // ============================================
   // EFFECTS
@@ -303,7 +257,7 @@ export function useBulkSelection(
         setSelectedIds([]);
       }
     }
-  }, [datasets.length, clearOnFilterChange]); // Trigger cuando cambia el length
+  }, [datasets.length, clearOnFilterChange]);
   
   // ============================================
   // ACTIONS
@@ -331,7 +285,7 @@ export function useBulkSelection(
         return [...prev, id];
       }
     });
-  }, [datasets, disableArchivedSelection, disableProcessingSelection]);
+  }, [datasets, disableArchivedSelection, disableProcessingSelection, onlyViewType]);
   
   /**
    * Toggle all - Seleccionar/deseleccionar todos los IDs visibles
@@ -359,7 +313,7 @@ export function useBulkSelection(
         return Array.from(newIds);
       }
     });
-  }, [datasets, disableArchivedSelection, disableProcessingSelection]);
+  }, [datasets, disableArchivedSelection, disableProcessingSelection, onlyViewType]);
   
   /**
    * Limpiar toda la selección
@@ -374,7 +328,7 @@ export function useBulkSelection(
   const selectOnly = useCallback((ids: string[]) => {
     const selectableNewIds = filterSelectableIds(ids, datasets, options);
     setSelectedIds(selectableNewIds);
-  }, [datasets, disableArchivedSelection, disableProcessingSelection]);
+  }, [datasets, disableArchivedSelection, disableProcessingSelection, onlyViewType]);
   
   /**
    * Verificar si una fila está seleccionada
@@ -388,15 +342,21 @@ export function useBulkSelection(
    */
   const isRowDisabled = useCallback((dataset: Dataset): boolean => {
     return !canSelectDataset(dataset, options);
-  }, [disableArchivedSelection, disableProcessingSelection]);
+  }, [disableArchivedSelection, disableProcessingSelection, onlyViewType]);
   
   /**
    * Obtener objetos completos de datasets seleccionados
    */
   const getSelectedDatasets = useCallback((): Dataset[] => {
-    const selectedSet = new Set(validSelectedIds);
-    return datasets.filter(ds => selectedSet.has(ds.id));
-  }, [datasets, validSelectedIds]);
+    return selectedDatasets;
+  }, [selectedDatasets]);
+  
+  /**
+   * 🆕 Obtener datasets seleccionados filtrados por tipo
+   */
+  const getSelectedByViewType = useCallback((viewType: ViewType): Dataset[] => {
+    return selectedDatasets.filter(ds => ds.viewType === viewType);
+  }, [selectedDatasets]);
   
   // ============================================
   // RETURN
@@ -410,6 +370,9 @@ export function useBulkSelection(
     isSomeSelected,
     isNoneSelected,
     
+    // 🆕 Stats
+    selectionStats,
+    
     // Acciones
     toggleRow,
     toggleAll,
@@ -419,7 +382,8 @@ export function useBulkSelection(
     isRowDisabled,
     
     // Utilities
-    getSelectedDatasets
+    getSelectedDatasets,
+    getSelectedByViewType // 🆕
   };
 }
 

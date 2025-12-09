@@ -6,73 +6,13 @@
  * Proporciona métodos optimizados para crear, actualizar, eliminar y archivar datasets
  * con manejo automático de caché, optimistic updates y sincronización con el backend.
  * 
- * PROPÓSITO:
- * - Separar la lógica de mutación del hook de lectura (useDatasets)
- * - Proveer feedback inmediato al usuario con optimistic updates
- * - Invalidar y refrescar automáticamente el cache de datasets tras cada operación
- * - Manejar límites del plan FREE (1 dataset) vs PRO (ilimitado)
- * - Mostrar toasts de éxito/error consistentes
- * 
- * ENDPOINTS API QUE USA:
- * - POST   /api/datasets              → Crear nuevo dataset
- * - PATCH  /api/datasets/[id]         → Actualizar dataset (nombre, descripción, status)
- * - DELETE /api/datasets/[id]         → Eliminar dataset permanentemente
- * - PATCH  /api/datasets/[id]         → Archivar dataset (status: 'archived')
- * 
- * DATOS PRISMA INVOLUCRADOS:
- * - Modelo: Dataset
- * - Campos críticos: id, userId, name, status, source, mqttBroker, mqttTopic, etc.
- * - Relaciones: user, dataPoints, insights, alerts, layers
- * 
- * USO EN COMPONENTE:
- * const { createDataset, updateDataset, deleteDataset, archiveDataset } = useDatasetMutations();
- * 
- * // Crear dataset MQTT
- * createDataset.mutate({
- *   name: 'Sensors A',
- *   source: 'mqtt_stream',
- *   mqttBroker: 'mqtt://broker.hivemq.com:1883',
- *   mqttTopic: 'factory/sensors/#'
- * });
- * 
- * // Eliminar dataset con confirmación
- * if (confirm('¿Seguro?')) {
- *   deleteDataset.mutate(datasetId);
- * }
- * 
- * // Acciones bulk (selección múltiple)
- * bulkArchive.mutate(['id1', 'id2', 'id3']);
- * 
- * VALIDACIONES REQUERIDAS:
- * - Verificar límites del usuario (useSession) antes de crear
- * - Validar que source tenga su config correspondiente (MQTT → broker + topic)
- * - No permitir eliminar datasets con status 'live' (primero pausar)
- * 
- * ESTADOS A RETORNAR:
- * {
- *   createDataset: { mutate, mutateAsync, isLoading, isSuccess, error },
- *   updateDataset: { mutate, mutateAsync, isLoading, isSuccess, error },
- *   deleteDataset: { mutate, mutateAsync, isLoading, isSuccess, error },
- *   archiveDataset: { mutate, mutateAsync, isLoading, isSuccess, error },
- *   bulkArchive: { mutate, mutateAsync, isLoading, isSuccess, error },
- *   bulkDelete: { mutate, mutateAsync, isLoading, isSuccess, error }
- * }
- * 
- * OPTIMISTIC UPDATES:
- * Al crear: añadir dataset temporal al cache con status 'processing'
- * Al eliminar: remover inmediatamente del cache
- * Al archivar: actualizar status a 'archived' antes de confirmar
- * 
- * INVALIDACIONES:
- * - Siempre invalidar ['datasets'] tras cualquier mutación
- * - Invalidar ['session'] tras crear/eliminar (actualiza contadores de límites)
- * - Invalidar ['dataset', id] si se actualiza un dataset específico
+ * 🆕 Ahora soporta viewType: 'gis' | 'threejs' para nuevos datasets
  */
 
 import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Dataset } from '@/types/Datasets';
+import { Dataset, ViewType } from '@/types/Datasets';
 
 /**
  * Dataset Status
@@ -92,8 +32,6 @@ export interface BoundingBox {
   max: { x: number; y: number; z: number };
 }
 
-
-
 /**
  * Create Dataset Input
  */
@@ -101,6 +39,9 @@ export interface CreateDatasetInput {
   name: string;
   description?: string;
   source: Extract<DatasetSource, 'mqtt_stream' | 'webhook' | 'api'>;
+  
+  // 🆕 View type - define cómo se visualizan los datos
+  viewType?: ViewType;
   
   // MQTT fields
   mqttBroker?: string;
@@ -116,8 +57,17 @@ export interface CreateDatasetInput {
   apiMethod?: 'GET' | 'POST';
   apiHeaders?: Record<string, string>;
   pollInterval?: number;
+  
+  // 🆕 Bounding box para ThreeJS (opcional)
+  boundingBox?: BoundingBox;
 }
-
+/**
+ * Alert Threshold Configuration
+ */
+export interface AlertThreshold {
+  max?: number;
+  min?: number;
+}
 /**
  * Update Dataset Input
  */
@@ -126,9 +76,10 @@ export interface UpdateDatasetInput {
   name?: string;
   description?: string;
   status?: Extract<DatasetStatus, 'active' | 'idle' | 'error' | 'archived'>;
+  viewType?: ViewType; // 🆕 Permitir cambiar el tipo de visualización
   alertsEnabled?: boolean;
-  alertThresholds?: Record<string, unknown>;
-  boundingBox?: BoundingBox;
+  alertThresholds?: Record<string, AlertThreshold>;
+  boundingBox?: BoundingBox; // 🆕 Actualizar bounding box
 }
 
 /**
@@ -207,6 +158,11 @@ export function useDatasetMutations(): UseDatasetMutationsReturn {
         throw new Error('Dataset name is required');
       }
 
+      // 🆕 Validar viewType
+      if (input.viewType && !['gis', 'threejs'].includes(input.viewType)) {
+        throw new Error('viewType must be either "gis" or "threejs"');
+      }
+
       // Validar configuración específica del source
       if (input.source === 'mqtt_stream') {
         if (!input.mqttBroker || !input.mqttTopic) {
@@ -220,12 +176,23 @@ export function useDatasetMutations(): UseDatasetMutationsReturn {
         }
       }
 
+      // 🆕 Validar boundingBox para ThreeJS (opcional pero recomendado)
+      if (input.viewType === 'threejs' && input.boundingBox) {
+        const { min, max } = input.boundingBox;
+        if (min.x >= max.x || min.y >= max.y || min.z >= max.z) {
+          throw new Error('Invalid bounding box: min values must be less than max values');
+        }
+      }
+
       const response = await fetch('/api/datasets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(input),
+        body: JSON.stringify({
+          ...input,
+          viewType: input.viewType || 'gis' // Default a GIS
+        }),
       });
 
       if (!response.ok) {
@@ -245,35 +212,29 @@ export function useDatasetMutations(): UseDatasetMutationsReturn {
       // Optimistic update: añadir dataset temporal
       if (previousDatasets) {
         const optimisticDataset: Dataset = {
-  id: `temp-${Date.now()}`,
-  userId: 'current-user',
-  name: newDataset.name,
-  description: newDataset.description,
-  status: 'processing',
-  source: newDataset.source,
-  mqttBroker: newDataset.mqttBroker,
-  mqttTopic: newDataset.mqttTopic,
-  mqttUsername: newDataset.mqttUsername,
-  // mqttPassword: // si tienes el dato, inclúyelo
-  webhookUrl: newDataset.source === 'webhook' ? '/api/webhooks/dataset/pending' : undefined,
-  // webhookSecret: // si lo usas,
-  apiEndpoint: newDataset.apiEndpoint,
-  // boundingBox: // si aplica (opcional)
-  totalDataPoints: 0,
-  dataPointsToday: 0,
-  // lastDataReceived: // opcional
-  // avgUpdateFreq: // opcional
-  alertsEnabled: false,
-  // alertThresholds: // si aplica
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  health: 100, // valor inicial por defecto, ajústalo si tienes otra lógica
-  trend: 'neutral', // valor por defecto, o puede ser 'up'/'down'/'neutral' según tu lógica
-  trendPercent: 0, // valor inicial por defecto
-  activeAlertsCount: 0, // valor inicial por defecto
-  // dataPoints, insights, alerts, layers: // si las necesitas
+          id: `temp-${Date.now()}`,
+          userId: 'current-user',
+          name: newDataset.name,
+          description: newDataset.description,
+          status: 'processing',
+          source: newDataset.source,
+          viewType: newDataset.viewType || 'gis', // 🆕
+          mqttBroker: newDataset.mqttBroker,
+          mqttTopic: newDataset.mqttTopic,
+          mqttUsername: newDataset.mqttUsername,
+          webhookUrl: newDataset.source === 'webhook' ? '/api/webhooks/dataset/pending' : undefined,
+          apiEndpoint: newDataset.apiEndpoint,
+          boundingBox: newDataset.boundingBox, // 🆕
+          totalDataPoints: 0,
+          dataPointsToday: 0,
+          alertsEnabled: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          health: 100,
+          trend: 'neutral',
+          trendPercent: 0,
+          activeAlertsCount: 0,
         };
-
 
         queryClient.setQueryData<DatasetsQueryResponse>(['datasets'], {
           ...previousDatasets,
@@ -284,8 +245,11 @@ export function useDatasetMutations(): UseDatasetMutationsReturn {
       return { previousDatasets };
     },
     onSuccess: (data: Dataset): void => {
+      // 🆕 Mensaje personalizado según viewType
+      const viewTypeLabel = data.viewType === 'threejs' ? '3D' : 'GIS';
+      
       toast.success('Dataset created successfully!', {
-        description: `${data.name} is now ${data.status}`,
+        description: `${data.name} (${viewTypeLabel}) is now ${data.status}`,
       });
 
       // Invalidar queries
@@ -315,6 +279,19 @@ export function useDatasetMutations(): UseDatasetMutationsReturn {
   const updateDataset = useMutation<Dataset, Error, UpdateDatasetInput, UpdateDatasetContext>({
     mutationFn: async (input: UpdateDatasetInput): Promise<Dataset> => {
       const { id, ...updateData } = input;
+
+      // 🆕 Validar viewType si se está actualizando
+      if (updateData.viewType && !['gis', 'threejs'].includes(updateData.viewType)) {
+        throw new Error('viewType must be either "gis" or "threejs"');
+      }
+
+      // 🆕 Validar boundingBox si se está actualizando
+      if (updateData.boundingBox) {
+        const { min, max } = updateData.boundingBox;
+        if (min.x >= max.x || min.y >= max.y || min.z >= max.z) {
+          throw new Error('Invalid bounding box: min values must be less than max values');
+        }
+      }
 
       const response = await fetch(`/api/datasets/${id}`, {
         method: 'PATCH',
@@ -362,7 +339,12 @@ export function useDatasetMutations(): UseDatasetMutationsReturn {
       return { previousDatasets, previousDataset };
     },
     onSuccess: (data: Dataset): void => {
-      toast.success('Dataset updated successfully');
+      // 🆕 Mensaje contextual si se cambió viewType
+      const message = data.viewType 
+        ? `Dataset updated successfully (now using ${data.viewType === 'threejs' ? '3D' : 'GIS'} view)`
+        : 'Dataset updated successfully';
+      
+      toast.success(message);
       
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
       queryClient.invalidateQueries({ queryKey: ['dataset', data.id] });

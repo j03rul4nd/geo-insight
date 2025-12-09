@@ -7,126 +7,48 @@
  * 
  * PROPÓSITO:
  * - Centralizar lógica de filtrado para mantener componente limpio
- * - Permitir compartir vistas filtradas vía URL (?status=error&sort=health)
+ * - Permitir compartir vistas filtradas vía URL (?status=error&sort=health&view=threejs)
  * - Guardar preferencias del usuario en localStorage
  * - Aplicar múltiples filtros simultáneos de forma eficiente
  * 
  * FILTROS DISPONIBLES:
- * 1. Status: 'all' | 'live' | 'idle' | 'error' | 'archived'
- * 2. Search: búsqueda en name y source (case-insensitive)
- * 3. Sort: por 'name' | 'dataPoints' | 'lastUpdated' | 'health'
- * 4. Direction: 'asc' | 'desc'
- * 
- * DATOS PRISMA INVOLUCRADOS:
- * - Modelo: Dataset
- * - Campos filtrados: status, name, source, totalDataPoints, lastDataReceived
- * - Campos calculados: health (derivado de lastDataReceived + status)
- * 
- * USO EN COMPONENTE:
- * const { 
- *   filters,
- *   filteredDatasets,
- *   setStatusFilter,
- *   setSearch,
- *   setSorting,
- *   clearFilters,
- *   activeFiltersCount
- * } = useDatasetFilters(datasets);
- * 
- * // Botones de filtro
- * <button onClick={() => setStatusFilter('error')}>
- *   Errores {filters.status === 'error' && '✓'}
- * </button>
- * 
- * // Barra de búsqueda
- * <input 
- *   value={filters.search} 
- *   onChange={(e) => setSearch(e.target.value)} 
- * />
- * 
- * // Headers de tabla con sort
- * <th onClick={() => setSorting('name')}>
- *   Name {filters.sortBy === 'name' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
- * </th>
- * 
- * // Renderizar solo datasets filtrados
- * {filteredDatasets.map(ds => <Row key={ds.id} {...ds} />)}
- * 
- * ESTADOS A RETORNAR:
- * {
- *   filters: {
- *     status: FilterType,
- *     search: string,
- *     sortBy: SortColumn,
- *     sortDirection: SortDirection
- *   },
- *   
- *   setStatusFilter: (status: FilterType) => void,
- *   setSearch: (query: string) => void,
- *   setSorting: (column: SortColumn) => void,  // Toggle direction si mismo column
- *   clearFilters: () => void,
- *   
- *   filteredDatasets: Dataset[],
- *   totalCount: number,
- *   activeFiltersCount: number,  // Cuántos filtros activos (no default)
- *   isEmpty: boolean              // filteredDatasets.length === 0
- * }
- * 
- * PERSISTENCIA:
- * - Guardar en localStorage: 'dataset-filters' (JSON)
- * - Sincronizar con URL: ?status=error&search=sensor&sort=health&dir=desc
- * - Al montar componente, leer desde URL primero, luego localStorage
- * 
- * ALGORITMO DE FILTRADO:
- * 1. Filtrar por status (si no es 'all')
- * 2. Filtrar por search en name/source (toLowerCase, includes)
- * 3. Ordenar por sortBy + sortDirection
- * 4. Retornar array filtrado
- * 
- * PERFORMANCE:
- * - Usar useMemo para filteredDatasets
- * - Debounce en search (300ms)
- */
-/**
- * useDatasetFilters.ts
- * 
- * MISIÓN:
- * Gestionar todos los estados de filtrado, búsqueda y ordenamiento de la tabla
- * de datasets. Sincroniza filtros con URL params y localStorage para persistencia.
- * 
- * PROPÓSITO:
- * - Centralizar lógica de filtrado para mantener componente limpio
- * - Permitir compartir vistas filtradas vía URL (?status=error&sort=health)
- * - Guardar preferencias del usuario en localStorage
- * - Aplicar múltiples filtros simultáneos de forma eficiente
+ * 1. Status: 'all' | 'active' | 'idle' | 'error' | 'archived' | 'processing'
+ * 2. ViewType: 'all' | 'gis' | 'threejs' 🆕
+ * 3. Source: 'all' | 'csv_upload' | 'json_upload' | 'mqtt_stream' | 'webhook' | 'api'
+ * 4. Search: búsqueda en name, source y description (case-insensitive)
+ * 5. Sort: por 'name' | 'dataPoints' | 'lastUpdated' | 'health' | 'createdAt'
+ * 6. Direction: 'asc' | 'desc'
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Dataset } from '@/types/Datasets';
-
+import { Dataset, ViewType } from '@/types/Datasets';
 
 // ============================================
 // TYPES
 // ============================================
 
 type FilterStatus = 'all' | 'active' | 'idle' | 'error' | 'archived' | 'processing';
+type FilterViewType = 'all' | ViewType; // 🆕
+type FilterSource = 'all' | Dataset['source'];
 type SortColumn = 'name' | 'dataPoints' | 'lastUpdated' | 'health' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
 
 interface DatasetFilters {
   status: FilterStatus;
+  viewType: FilterViewType; // 🆕
+  source: FilterSource;
   search: string;
   sortBy: SortColumn;
   sortDirection: SortDirection;
 }
 
-
-
 interface UseDatasetFiltersReturn {
   filters: DatasetFilters;
   setStatusFilter: (status: FilterStatus) => void;
+  setViewTypeFilter: (viewType: FilterViewType) => void; // 🆕
+  setSourceFilter: (source: FilterSource) => void;
   setSearch: (query: string) => void;
   setSorting: (column: SortColumn) => void;
   clearFilters: () => void;
@@ -142,6 +64,8 @@ interface UseDatasetFiltersReturn {
 
 const DEFAULT_FILTERS: DatasetFilters = {
   status: 'all',
+  viewType: 'all', // 🆕
+  source: 'all',
   search: '',
   sortBy: 'lastUpdated',
   sortDirection: 'desc'
@@ -218,6 +142,17 @@ const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<DatasetFilt
     filters.status = status as FilterStatus;
   }
   
+  // 🆕 ViewType filter
+  const viewType = searchParams.get('view') || searchParams.get('viewType');
+  if (viewType && ['all', 'gis', 'threejs'].includes(viewType)) {
+    filters.viewType = viewType as FilterViewType;
+  }
+  
+  const source = searchParams.get('source');
+  if (source && ['all', 'csv_upload', 'json_upload', 'mqtt_stream', 'webhook', 'api'].includes(source)) {
+    filters.source = source as FilterSource;
+  }
+  
   const search = searchParams.get('search');
   if (search) {
     filters.search = search;
@@ -247,6 +182,21 @@ const syncFiltersToURL = (filters: DatasetFilters, searchParams: URLSearchParams
     params.set('status', filters.status);
   } else {
     params.delete('status');
+  }
+  
+  // 🆕 ViewType
+  if (filters.viewType !== 'all') {
+    params.set('view', filters.viewType);
+  } else {
+    params.delete('view');
+    params.delete('viewType'); // Limpiar ambos posibles nombres
+  }
+  
+  // Source
+  if (filters.source !== 'all') {
+    params.set('source', filters.source);
+  } else {
+    params.delete('source');
   }
   
   // Search
@@ -325,6 +275,15 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
     setFilters(prev => ({ ...prev, status }));
   }, []);
   
+  // 🆕 Filtro por tipo de visualización
+  const setViewTypeFilter = useCallback((viewType: FilterViewType) => {
+    setFilters(prev => ({ ...prev, viewType }));
+  }, []);
+  
+  const setSourceFilter = useCallback((source: FilterSource) => {
+    setFilters(prev => ({ ...prev, source }));
+  }, []);
+  
   const setSearch = useCallback((query: string) => {
     setFilters(prev => ({ ...prev, search: query }));
   }, []);
@@ -354,7 +313,17 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
       result = result.filter(ds => ds.status === filters.status);
     }
     
-    // 2. FILTRAR POR BÚSQUEDA (usar debounced search)
+    // 🆕 2. FILTRAR POR VIEWTYPE
+    if (filters.viewType !== 'all') {
+      result = result.filter(ds => ds.viewType === filters.viewType);
+    }
+    
+    // 3. FILTRAR POR SOURCE
+    if (filters.source !== 'all') {
+      result = result.filter(ds => ds.source === filters.source);
+    }
+    
+    // 4. FILTRAR POR BÚSQUEDA (usar debounced search)
     if (debouncedSearch) {
       const searchLower = debouncedSearch.toLowerCase();
       result = result.filter(ds => 
@@ -364,7 +333,7 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
       );
     }
     
-    // 3. ORDENAR
+    // 5. ORDENAR
     result.sort((a, b) => {
       let comparison = 0;
       
@@ -396,7 +365,7 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
     });
     
     return result;
-  }, [datasets, filters.status, debouncedSearch, filters.sortBy, filters.sortDirection]);
+  }, [datasets, filters.status, filters.viewType, filters.source, debouncedSearch, filters.sortBy, filters.sortDirection]);
   
   // ============================================
   // COMPUTED VALUES
@@ -406,6 +375,8 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
     let count = 0;
     
     if (filters.status !== 'all') count++;
+    if (filters.viewType !== 'all') count++; // 🆕
+    if (filters.source !== 'all') count++;
     if (filters.search) count++;
     if (filters.sortBy !== 'lastUpdated' || filters.sortDirection !== 'desc') count++;
     
@@ -422,6 +393,8 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
   return {
     filters,
     setStatusFilter,
+    setViewTypeFilter, // 🆕
+    setSourceFilter,
     setSearch,
     setSorting,
     clearFilters,
@@ -438,9 +411,10 @@ export function useDatasetFilters(datasets: Dataset[]): UseDatasetFiltersReturn 
 
 export type {
   FilterStatus,
+  FilterViewType, // 🆕
+  FilterSource,
   SortColumn,
   SortDirection,
   DatasetFilters,
-  Dataset,
   UseDatasetFiltersReturn
 };

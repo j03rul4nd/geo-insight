@@ -54,6 +54,63 @@ model Subscription {
   @@index([status])
 }
 
+
+model MetricConfig {
+  id            String   @id @default(cuid())
+  datasetId     String
+  
+  // Basic Configuration
+  name          String
+  color         String   @default("#3b82f6")
+  valueSelector String   // JSONPath o dot notation: "metadata.cargo.passengers.current"
+  
+  // Aggregation & Processing
+  aggregation   String   @default("none") // "none" | "avg" | "sum" | "min" | "max" | "count"
+  windowSize    Int      @default(50)     // Número de puntos a mantener en la visualización
+  
+  // Chart Configuration
+  chartType     String   @default("line") // "line" | "area" | "bar" | "scatter" | "gauge" | "distribution"
+  showStats     Boolean  @default(true)
+  
+  // Display Options
+  unit          String?                    // "km/h", "°C", "%", etc.
+  decimals      Int      @default(2)
+  
+  // 🆕 Advanced Chart Options
+  // Para Scatter Plot: correlacionar dos variables (X vs Y)
+  secondaryValueSelector String? // e.g., "metadata.cargo.passengers.occupancyRate"
+  filters                 Json?
+  // Para Bar/Distribution: agrupar datos por categoría
+  groupBySelector        String? // e.g., "metadata.sensorType" o "metadata.serviceType"
+  
+  // Para Gauge: umbrales de color personalizables
+  thresholds             Json?   // Array de { value: number, color: string, label: string }
+  // Ejemplo: [
+  //   { "value": 30, "color": "#ef4444", "label": "Low" },
+  //   { "value": 70, "color": "#f59e0b", "label": "Medium" },
+  //   { "value": 100, "color": "#10b981", "label": "High" }
+  // ]
+  
+  // 🆕 Additional Configuration
+  description   String?  // Descripción de qué mide esta métrica
+  isVisible     Boolean  @default(true) // Permitir ocultar métricas sin eliminarlas
+  sortOrder     Int      @default(0)    // Orden de visualización en la UI
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  dataset       Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@unique([datasetId, name]) // Prevenir nombres duplicados en el mismo dataset
+  @@index([datasetId, sortOrder]) // Para ordenar métricas
+  @@index([datasetId, isVisible]) // Para filtrar métricas visibles
+  @@index([datasetId, createdAt])
+}
+
+
 model Dataset {
   id               String      @id @default(cuid())
   userId           String
@@ -61,6 +118,12 @@ model Dataset {
   description      String?
   status           String      @default("active")
   source           String
+  
+  // 🆕 Nuevo campo para tipo de visualización
+  viewType         String      @default("gis") // "gis" o "threejs"
+  metrics          MetricConfig[]
+
+  
   mqttBroker       String?
   mqttTopic        String?
   mqttUsername     String?
@@ -87,6 +150,7 @@ model Dataset {
 
   @@index([userId, status])
   @@index([userId, createdAt])
+  @@index([viewType]) // 🆕 Índice para filtrar por tipo
 }
 
 model DatasetMapping {
@@ -95,9 +159,14 @@ model DatasetMapping {
   
   // Paths para mapear campos del payload MQTT
   valuePath      String   @default("value")
+  
+  // 🆕 Paths para coordenadas - ahora son más flexibles
+  // Para GIS: x=longitude, y=latitude, z=altitude
+  // Para ThreeJS: x, y, z en espacio cartesiano
   xPath          String?  @default("x")
   yPath          String?  @default("y")
   zPath          String?  @default("z")
+  
   sensorIdPath   String?  @default("sensorId")
   sensorTypePath String?  @default("sensorType")
   timestampPath  String   @default("timestamp")
@@ -139,6 +208,14 @@ model DataPoint {
   datasetId      String
   value          Float
   sensorId       String
+  
+  // 🆕 Coordenadas ahora guardadas directamente
+  // Para GIS: x=longitude, y=latitude, z=altitude
+  // Para ThreeJS: x, y, z en espacio cartesiano
+  x              Float?
+  y              Float?
+  z              Float?
+  
   metadata       Json?
   timestamp      DateTime @default(now())
   createdAt      DateTime @default(now())
@@ -148,6 +225,7 @@ model DataPoint {
 
   @@index([datasetId, timestamp(sort: Desc)])
   @@index([sensorId, timestamp(sort: Desc)])
+  @@index([datasetId, x, y, z]) // 🆕 Índice espacial para queries geográficas
 }
 
 model Layer {
@@ -157,15 +235,161 @@ model Layer {
   description String?
   enabled     Boolean  @default(true)
   order       Int      @default(0)
-  colorScheme Json?
+  
+  // ✅ Tipo de asset (móvil, estático, área)
+  assetType   String   @default("point") // "point" | "moving" | "area"
+  
+  // ============================================
+  // CONFIGURACIÓN DE VISUALIZACIÓN
+  // ============================================
+  
+  // Tipo de renderizado
+  renderType  String   @default("marker") // "marker" | "icon" | "image" | "model3d" | "shape"
+  
+  // ✅ Configuración de marcadores/iconos
+  markerConfig Json?   // { iconName?: string, iconLibrary?: "lucide" | "custom" }
+  
+  // ✅ URL de imagen personalizada
+  imageUrl    String?
+  
+  // ✅ URL de modelo 3D (GLB)
+  modelUrl    String?
+  
+  // ✅ Configuración completa del modelo 3D para Mapbox
+  model3dConfig Json?  
+  // {
+  //   scale: [number, number, number],
+  //   rotation: [number, number, number],
+  //   translate: [number, number, number],
+  //   orientation?: "map" | "viewport" | "auto",
+  //   anchor?: "center" | "bottom" | "top",
+  //   autoRotate?: boolean,
+  //   autoRotateOffset?: number,
+  //   minZoom?: number,
+  //   maxZoom?: number,
+  //   scaleWithZoom?: boolean,
+  //   scaleRange?: [number, number],
+  //   animations?: { idle?: string, moving?: string, speed?: number },
+  //   castShadows?: boolean,
+  //   receiveShadows?: boolean,
+  //   metalness?: number,
+  //   roughness?: number,
+  //   emissiveIntensity?: number,
+  //   frustumCulling?: boolean,
+  //   lodEnabled?: boolean,
+  //   lodDistances?: number[],
+  //   clickable?: boolean,
+  //   hoverable?: boolean,
+  //   altitudeMode?: "absolute" | "relative" | "clampToGround",
+  //   heightOffset?: number
+  // }
+  
+  // ✅ Configuración de shapes/polígonos
+  shapeConfig Json?   // { type: "circle" | "polygon" | "rectangle", coordinates?: [...] }
+  
+  // ============================================
+  // ESTILO Y APARIENCIA
+  // ============================================
+  
+  colorScheme Json?    // Esquema de colores existente (gradient, solid, etc.)
   opacity     Float    @default(1.0)
-  pointSize   Float    @default(1.0)
+  pointSize   Float    @default(1.0)  // Escala del asset (multiplicador)
+  
+  // ✅ Configuración de borde
+  borderConfig Json?   // { width: number, color: string, style: "solid" | "dashed" }
+  
+  // ✅ Configuración de sombra
+  shadowConfig Json?   // { enabled: boolean, color: string, blur: number, offsetX: number, offsetY: number }
+  
+  // ============================================
+  // COMPORTAMIENTO DINÁMICO
+  // ============================================
+  
+  // ✅ Reglas de color dinámico
+  colorRules   Json?   // Array de { condition: string, colorScheme: ColorScheme }
+  
+  // ✅ Reglas de escala dinámica
+  scaleRules   Json?   // Array de { condition: string, scale: number }
+  
+  // ✅ Reglas de visibilidad
+  visibilityRules Json? // Array de { condition: string, visible: boolean }
+  
+  // ============================================
+  // CONFIGURACIÓN DE TRAIL (para assets móviles)
+  // ============================================
+  
+  // ✅ Habilitar trail/estela
+  showTrail       Boolean @default(false)
+  trailLength     Int     @default(50)      // Número de puntos históricos
+  trailWidth      Float   @default(2.0)     // Ancho de la línea
+  trailOpacity    Float   @default(0.6)     // Opacidad del trail
+  
+  // ✅ Modo de color del trail
+  trailColorMode  String  @default("static") // "static" | "dynamic" | "gradient" | "rules"
+  
+  // ✅ Esquema de colores estático/gradient
+  trailColorScheme Json?  // ColorScheme para modos static/gradient
+  
+  // ✅ NUEVO: Reglas de color del trail
+  trailColorRules  Json?  
+  // Array de reglas: [{
+  //   id: string,
+  //   name: string,
+  //   priority: number,
+  //   applicationType: "entire-trail" | "current-segment" | "future-segments" | "historical",
+  //   enabled: boolean,
+  //   description?: string,
+  //   condition: string,  // Expresión evaluable: "metadata.speed > 80"
+  //   color: string       // Color a aplicar
+  // }]
+  
+  // ✅ NUEVO: Configuración de gradiente histórico
+  trailGradientConfig Json?
+  // {
+  //   enabled: boolean,
+  //   fadeOldSegments?: boolean,      // Atenuar segmentos antiguos
+  //   fadeStartAge?: number,          // Edad en ms donde empieza el fade
+  //   fadeEndAge?: number,            // Edad en ms donde termina el fade
+  //   minOpacity?: number             // Opacidad mínima (0.0 - 1.0)
+  // }
+  
+  // ✅ NUEVO: Configuración de validación del trail
+  trailValidationConfig Json?
+  // {
+  //   enableValidation?: boolean,
+  //   minDistanceThreshold?: number,  // Distancia mínima entre puntos
+  //   maxTimeBetweenPoints?: number   // Tiempo máximo en ms antes de reset
+  // }
+  
+  // ✅ NUEVO: Configuración de puntos históricos
+  trailPointsConfig Json?
+  // {
+  //   showHistoricalPoints?: boolean,  // Mostrar puntos en el trail
+  //   pointInterval?: number,          // Cada cuántos puntos mostrar
+  //   pointSize?: number,              // Tamaño de los puntos
+  //   pointOpacity?: number,           // Opacidad de los puntos
+  //   fadeWithAge?: boolean            // Fade según antigüedad
+  // }
+  
+  // ============================================
+  // FILTROS Y QUERIES
+  // ============================================
+  
   filterQuery String?
+  
+  // ============================================
+  // METADATA
+  // ============================================
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   dataset     Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 
   @@index([datasetId, order])
+  @@index([datasetId, enabled])
+  @@index([assetType])
+  @@index([renderType])
+  @@index([showTrail])
 }
 
 model Alert {

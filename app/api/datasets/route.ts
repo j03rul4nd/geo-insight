@@ -1,54 +1,22 @@
 /**
  * DATASETS LIST & CREATE ENDPOINT
  * 
- * GET - OBJETIVO:
- * Listar todos los datasets del usuario actual con paginación y filtros.
+ * GET - List all datasets for current user with pagination and filters
+ * POST - Create new dataset with plan limit validation
  * 
- * GET - MISIÓN:
- * - Consultar Dataset WHERE userId = currentUser
- * - Filtros opcionales: status (active/idle/error), source (mqtt/csv/webhook)
- * - Incluir stats básicas: totalDataPoints, lastDataReceived, activeAlerts
- * - Ordenar por updatedAt DESC (más recientes primero)
- * - Paginación: page, limit (default 20)
- * 
- * POST - OBJETIVO:
- * Crear un nuevo dataset validando límites del plan del usuario.
- * 
- * POST - MISIÓN:
- * - Validar currentDatasetsUsage < monthlyDatasetsLimit (o -1 si Pro)
- * - Crear registro en Dataset con status="processing"
- * - Si source="mqtt_stream": validar mqttBroker, mqttTopic obligatorios
- * - Si source="webhook": generar webhookUrl único + webhookSecret
- * - Incrementar User.currentDatasetsUsage += 1
- * - Crear ActivityLog: action="dataset.created"
- * - Si source="mqtt_stream": El servidor externo debe detectar este nuevo
- *   dataset en DB y conectarse al broker MQTT especificado
- * 
- * USADO POR:
- * - /datasets page (tabla de datasets)
- * - Botón "+ Create Dataset" en dashboard
- * 
- * PRISMA MODELS:
- * - User (currentDatasetsUsage, monthlyDatasetsLimit)
- * - Dataset (name, source, status, mqtt*, webhook*, userId)
- * - ActivityLog (action, resource, userId)
+ * 🆕 Now supports viewType: "gis" or "threejs"
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { nanoid } from 'nanoid';
 import crypto from 'crypto';
-
-/**
- * DATASETS LIST & CREATE ENDPOINT
- * 
- * GET - List all datasets for current user with pagination and filters
- * POST - Create new dataset with plan limit validation
- */
+import { Prisma } from '@prisma/client';
 
 // GET /api/datasets - List datasets
 export async function GET(req: NextRequest) {
   try {
+    // En Next.js 15, auth() ya NO es async
     const { userId } = await auth();
     
     if (!userId) {
@@ -62,13 +30,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
-    const status = searchParams.get('status'); // active, idle, error, archived, processing
-    const source = searchParams.get('source'); // mqtt_stream, csv_upload, webhook, api
+    const status = searchParams.get('status');
+    const source = searchParams.get('source');
+    const viewType = searchParams.get('viewType');
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: any = { userId };
+    // Build where clause with proper typing
+    const where: Prisma.DatasetWhereInput = { userId };
     
     if (status) {
       where.status = status;
@@ -76,6 +45,11 @@ export async function GET(req: NextRequest) {
     
     if (source) {
       where.source = source;
+    }
+
+    // 🆕 Filter by viewType
+    if (viewType && (viewType === 'gis' || viewType === 'threejs')) {
+      where.viewType = viewType;
     }
 
     // Fetch datasets with stats
@@ -91,6 +65,7 @@ export async function GET(req: NextRequest) {
           description: true,
           status: true,
           source: true,
+          viewType: true,
           totalDataPoints: true,
           dataPointsToday: true,
           lastDataReceived: true,
@@ -126,8 +101,7 @@ export async function GET(req: NextRequest) {
       else if (dataset.status === 'processing') health = 75;
       else if (activeAlerts > 0) health = Math.max(30, 100 - (activeAlerts * 20));
       
-      // Calculate trend based on today vs yesterday data points
-      // (In a real implementation, you'd query historical data)
+      // Calculate trend
       const trend = dataset.dataPointsToday > 0 ? 'up' : 'neutral';
       const trendPercent = dataset.totalDataPoints > 0 
         ? Math.round((dataset.dataPointsToday / dataset.totalDataPoints) * 100)
@@ -168,6 +142,7 @@ export async function GET(req: NextRequest) {
 // POST /api/datasets - Create new dataset
 export async function POST(req: NextRequest) {
   try {
+    // En Next.js 15, auth() ya NO es async
     const { userId } = await auth();
     
     if (!userId) {
@@ -182,22 +157,27 @@ export async function POST(req: NextRequest) {
       name,
       description,
       source,
+      viewType,
       mqttBroker,
       mqttTopic,
       mqttUsername,
       mqttPassword,
-      webhookFormat,
       webhookSecret,
       apiEndpoint,
-      apiMethod,
-      apiHeaders,
-      pollInterval
     } = body;
 
     // Validate required fields
     if (!name || !source) {
       return NextResponse.json(
         { error: 'Name and source are required' },
+        { status: 400 }
+      );
+    }
+
+    // 🆕 Validate viewType
+    if (viewType && !['gis', 'threejs'].includes(viewType)) {
+      return NextResponse.json(
+        { error: 'viewType must be either "gis" or "threejs"' },
         { status: 400 }
       );
     }
@@ -229,7 +209,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user has reached dataset limit
-    // -1 means unlimited (Pro plan)
     if (user.monthlyDatasetsLimit !== -1 && 
         user.currentDatasetsUsage >= user.monthlyDatasetsLimit) {
       return NextResponse.json(
@@ -243,36 +222,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare dataset data
-    const datasetData: any = {
-      userId,
+    // Prepare dataset data with proper typing
+    const datasetData: Prisma.DatasetCreateInput = {
+      user: {
+        connect: { id: userId }
+      },
       name,
-      description,
+      description: description || null,
       source,
-      status: 'processing'
+      status: 'processing',
+      viewType: viewType || 'gis',
     };
 
     // Add source-specific configuration
     if (source === 'mqtt_stream') {
       datasetData.mqttBroker = mqttBroker;
       datasetData.mqttTopic = mqttTopic;
-      datasetData.mqttUsername = mqttUsername;
-      // TODO: Encrypt password in production
-      datasetData.mqttPassword = mqttPassword;
+      datasetData.mqttUsername = mqttUsername || null;
+      datasetData.mqttPassword = mqttPassword || null;
     }
 
     if (source === 'webhook') {
-      // Generate unique webhook URL
       const webhookId = nanoid(16);
       datasetData.webhookUrl = `/api/webhooks/dataset/${webhookId}`;
-      
-      // Generate webhook secret for validation
       datasetData.webhookSecret = webhookSecret || crypto.randomBytes(32).toString('hex');
     }
 
     if (source === 'api') {
-      datasetData.apiEndpoint = apiEndpoint;
-      // Store additional API config in metadata if needed
+      datasetData.apiEndpoint = apiEndpoint || null;
     }
 
     // Create dataset and update user usage in transaction
@@ -290,13 +267,16 @@ export async function POST(req: NextRequest) {
       }),
       prisma.activityLog.create({
         data: {
-          userId,
+          user: {
+            connect: { id: userId }
+          },
           action: 'dataset.created',
           resource: 'Dataset',
-          resourceId: datasetData.name, // Will be replaced with actual ID
+          resourceId: name,
           metadata: {
             name,
             source,
+            viewType: datasetData.viewType,
             ...(source === 'mqtt_stream' && { mqttBroker, mqttTopic })
           }
         }
@@ -308,7 +288,7 @@ export async function POST(req: NextRequest) {
       where: {
         userId,
         resource: 'Dataset',
-        resourceId: datasetData.name
+        resourceId: name
       },
       data: {
         resourceId: dataset.id

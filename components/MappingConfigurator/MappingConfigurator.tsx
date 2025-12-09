@@ -275,7 +275,21 @@ export default function MappingConfigurator({
     setError(null);
 
     try {
-      const success = await onSave(config);
+
+       // ✅ Quitar el prefijo 'data.' antes de guardar
+      const configToSave: MappingConfig = {
+        valuePath: config.valuePath?.replace(/^data\./, '') || null,
+        xPath: config.xPath?.replace(/^data\./, '') || null,
+        yPath: config.yPath?.replace(/^data\./, '') || null,
+        zPath: config.zPath?.replace(/^data\./, '') || null,
+        sensorIdPath: config.sensorIdPath?.replace(/^data\./, '') || null,
+        sensorTypePath: config.sensorTypePath?.replace(/^data\./, '') || null,
+        timestampPath: config.timestampPath?.replace(/^data\./, '') || null,
+        unitPath: config.unitPath?.replace(/^data\./, '') || null,
+      };
+
+
+      const success = await onSave(configToSave);
       if (success) {
         onClose();
       } else {

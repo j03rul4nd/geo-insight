@@ -1,10 +1,14 @@
+
 "use client";
 import React, { useState } from 'react';
-import { Database, Plus, Search, Filter, MoreVertical, TrendingUp, TrendingDown, Minus, ExternalLink, Play, Download, Bell, Archive, Trash2, Upload, Wifi, Globe, Webhook, X, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Database, Plus, Search, Filter, MoreVertical, TrendingUp, TrendingDown, Minus, ExternalLink, Play, Download, Bell, Archive, Trash2, Upload, Wifi, Globe, Webhook, X, Check, AlertCircle, Loader2, Map, Box } from 'lucide-react';
 import { useDatasets } from '@/hooks/useDatasets';
 import { useDatasetFilters } from '@/hooks/useDatasetFilters';
 import { useDatasetMutations } from '@/hooks/useDatasetMutations';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
+import { useRouter } from 'next/navigation';
+import type { ViewType } from '@/types/Datasets';
+import { useSession, useInvalidateSession, useOptimisticUpdateLimits } from '@/hooks/useSession';
 
 type TabType = 'file' | 'mqtt' | 'api' | 'webhook';
 type TestConnectionStatus = 'testing' | 'success' | 'error' | null;
@@ -29,6 +33,7 @@ interface TabConfig {
 
 interface FormData {
   name: string;
+  viewType: ViewType;
   description: string;
   brokerUrl: string;
   topic: string;
@@ -40,10 +45,22 @@ interface FormData {
 }
 
 const DatasetManagement: React.FC = () => {
+  const router = useRouter();
+  
   // ============================================
   // HOOKS - Data & Mutations
   // ============================================
-  const { datasets, loading, error: datasetsError, testMQTTConnection } = useDatasets();
+  const { 
+    datasets, 
+    loading, 
+    error: datasetsError, 
+    testMQTTConnection,
+  } = useDatasets();
+  
+  const { limits, isPro, canCreateDataset, isLoading: sessionLoading } = useSession();
+  const invalidateSession = useInvalidateSession(); // ✅ Hook para invalidar sesión
+  const optimisticUpdate = useOptimisticUpdateLimits(); // ✅ Hook para updates optimistas
+  
   const { createDataset, deleteDataset, archiveDataset, bulkArchive, bulkDelete } = useDatasetMutations();
   
   // ============================================
@@ -53,6 +70,7 @@ const DatasetManagement: React.FC = () => {
     filters,
     filteredDatasets,
     setStatusFilter,
+    setViewTypeFilter,
     setSearch,
     setSorting,
     clearFilters,
@@ -69,7 +87,8 @@ const DatasetManagement: React.FC = () => {
     toggleAll,
     clearSelection,
     isRowSelected,
-    isRowDisabled
+    isRowDisabled,
+    selectionStats
   } = useBulkSelection(filteredDatasets, {
     clearOnFilterChange: true,
     disableArchivedSelection: true
@@ -87,6 +106,7 @@ const DatasetManagement: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
+    viewType: 'gis',
     brokerUrl: '',
     topic: '',
     username: '',
@@ -107,12 +127,18 @@ const DatasetManagement: React.FC = () => {
     processing: { color: 'bg-blue-500', label: 'Processing', glow: 'shadow-blue-500/50' }
   };
 
-  const filterButtons: FilterButton[] = [
+  const statusFilterButtons: FilterButton[] = [
     { id: 'all', label: 'All', icon: null },
     { id: 'active', label: 'Live', icon: '🟢' },
     { id: 'idle', label: 'Idle', icon: '🟡' },
     { id: 'error', label: 'Error', icon: '🔴' },
     { id: 'archived', label: 'Archived', icon: '📦' }
+  ];
+
+  const viewTypeFilterButtons: FilterButton[] = [
+    { id: 'all', label: 'All Views', icon: null },
+    { id: 'gis', label: 'GIS Map', icon: '🗺️' },
+    { id: 'threejs', label: '3D View', icon: '🎨' }
   ];
 
   const tabConfigs: TabConfig[] = [
@@ -122,6 +148,12 @@ const DatasetManagement: React.FC = () => {
     { id: 'webhook', icon: Webhook, label: 'Webhook' }
   ];
 
+  const datasetLimit = limits?.datasets.limit ?? 1;
+  const datasetUsed = limits?.datasets.used ?? datasets.length;
+  const isDatasetLimitReached = !canCreateDataset;
+
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+
   // ============================================
   // HANDLERS
   // ============================================
@@ -129,7 +161,7 @@ const DatasetManagement: React.FC = () => {
     setTestConnectionStatus('testing');
     
     try {
-      const success = await testMQTTConnection({
+      const result = await testMQTTConnection({
         brokerUrl: formData.brokerUrl,
         topic: formData.topic,
         username: formData.username || undefined,
@@ -139,7 +171,7 @@ const DatasetManagement: React.FC = () => {
         cleanSession: formData.cleanSession
       });
       
-      setTestConnectionStatus(success ? 'success' : 'error');
+      setTestConnectionStatus(result.success ? 'success' : 'error');
       setTimeout(() => setTestConnectionStatus(null), 3000);
     } catch (error) {
       setTestConnectionStatus('error');
@@ -149,11 +181,15 @@ const DatasetManagement: React.FC = () => {
 
   const handleCreateDataset = async (): Promise<void> => {
     try {
+      // ✅ ACTUALIZACIÓN OPTIMISTA: Incrementar contador inmediatamente
+      optimisticUpdate('datasets', 1);
+      
       if (selectedTab === 'mqtt') {
         await createDataset.mutateAsync({
           name: formData.name,
           description: formData.description || undefined,
           source: 'mqtt_stream',
+          viewType: formData.viewType,
           mqttBroker: formData.brokerUrl,
           mqttTopic: formData.topic,
           mqttUsername: formData.username || undefined,
@@ -161,10 +197,13 @@ const DatasetManagement: React.FC = () => {
         });
       }
       
-      // Reset form and close modal
+      // ✅ SINCRONIZACIÓN: Invalidar para obtener datos reales del servidor
+      invalidateSession();
+      
       setFormData({
         name: '',
         description: '',
+        viewType: 'gis',
         brokerUrl: '',
         topic: '',
         username: '',
@@ -176,6 +215,8 @@ const DatasetManagement: React.FC = () => {
       setShowNewDatasetModal(false);
     } catch (error) {
       console.error('Failed to create dataset:', error);
+      // ✅ Si falla, invalidar para revertir el update optimista
+      invalidateSession();
     }
   };
 
@@ -185,16 +226,27 @@ const DatasetManagement: React.FC = () => {
     }
     
     try {
+      // ✅ ACTUALIZACIÓN OPTIMISTA: Decrementar contador
+      optimisticUpdate('datasets', -1);
+      
       await deleteDataset.mutateAsync(id);
+      
+      // ✅ SINCRONIZACIÓN
+      invalidateSession();
       setOpenDropdown(null);
     } catch (error) {
       console.error('Failed to delete dataset:', error);
+      // ✅ Revertir si falla
+      invalidateSession();
     }
   };
 
   const handleArchive = async (id: string): Promise<void> => {
     try {
       await archiveDataset.mutateAsync(id);
+      
+      // ✅ Archivar NO afecta límites, pero invalidamos por si acaso
+      invalidateSession();
       setOpenDropdown(null);
     } catch (error) {
       console.error('Failed to archive dataset:', error);
@@ -206,6 +258,9 @@ const DatasetManagement: React.FC = () => {
     
     try {
       await bulkArchive.mutateAsync({ datasetIds: selectedIds });
+      
+      // ✅ Invalidar sesión después de bulk operations
+      invalidateSession();
       clearSelection();
       setShowBulkActions(false);
     } catch (error) {
@@ -221,18 +276,26 @@ const DatasetManagement: React.FC = () => {
     }
     
     try {
+      // ✅ ACTUALIZACIÓN OPTIMISTA: Decrementar por cantidad eliminada
+      optimisticUpdate('datasets', -selectedCount);
+      
       await bulkDelete.mutateAsync({ datasetIds: selectedIds });
+      
+      // ✅ SINCRONIZACIÓN
+      invalidateSession();
       clearSelection();
       setShowBulkActions(false);
     } catch (error) {
       console.error('Failed to bulk delete:', error);
+      // ✅ Revertir si falla
+      invalidateSession();
     }
   };
 
   const handleRowClick = (e: React.MouseEvent, datasetId: string): void => {
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('input')) return;
-    window.location.href = `/datasets/${datasetId}`;
+    router.push(`/datasets/${datasetId}`);
   };
 
   const getHealthColor = (health?: number): string => {
@@ -240,6 +303,14 @@ const DatasetManagement: React.FC = () => {
     if (health >= 95) return 'bg-green-500';
     if (health >= 80) return 'bg-yellow-500';
     return 'bg-red-500';
+  };
+
+  const getViewTypeIcon = (viewType: ViewType): string => {
+    return viewType === 'threejs' ? '🎨' : '🗺️';
+  };
+
+  const getViewTypeLabel = (viewType: ViewType): string => {
+    return viewType === 'threejs' ? '3D View' : 'GIS Map';
   };
 
   const formatLastUpdated = (date?: Date): string => {
@@ -263,7 +334,7 @@ const DatasetManagement: React.FC = () => {
   // ============================================
   // LOADING & ERROR STATES
   // ============================================
-  if (loading) {
+  if (loading || sessionLoading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-gray-100 p-6 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -297,17 +368,21 @@ const DatasetManagement: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100 p-6">
       {/* Free Plan Banner */}
-      <div className="mb-4 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-lg px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm">
-          <Database className="w-4 h-4 text-blue-400" />
-          <span className="text-gray-300">{datasets.length}/1 datasets used</span>
-          <span className="text-gray-500">•</span>
-          <span className="text-gray-400">Upgrade for unlimited</span>
+      {!isPro && (
+        <div className="mb-4 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-lg px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <Database className="w-4 h-4 text-blue-400" />
+            <span className="text-gray-300">
+              {datasetUsed}/{datasetLimit} datasets used
+            </span>
+            <span className="text-gray-500">•</span>
+            <span className="text-gray-400">Upgrade for unlimited</span>
+          </div>
+          <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium transition-colors">
+            Upgrade to Pro
+          </button>
         </div>
-        <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium transition-colors">
-          Upgrade to Pro
-        </button>
-      </div>
+      )}
 
       {/* Header Zone */}
       <div className="mb-6">
@@ -371,8 +446,8 @@ const DatasetManagement: React.FC = () => {
             <button
               onClick={() => setShowNewDatasetModal(true)}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={datasets.length >= 1}
-              title={datasets.length >= 1 ? "Upgrade to Pro for unlimited datasets" : ""}
+              disabled={isDatasetLimitReached}
+              title={isDatasetLimitReached ? "Upgrade to Pro for unlimited datasets" : ""}
             >
               <Plus className="w-4 h-4" />
               New Dataset
@@ -381,9 +456,11 @@ const DatasetManagement: React.FC = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="flex items-center gap-3">
-          <div className="flex gap-2">
-            {filterButtons.map(filter => (
+        <div className="flex flex-col gap-3">
+          {/* Status Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 uppercase tracking-wide mr-2">Status:</span>
+            {statusFilterButtons.map(filter => (
               <button
                 key={filter.id}
                 onClick={() => setStatusFilter(filter.id as any)}
@@ -398,15 +475,44 @@ const DatasetManagement: React.FC = () => {
               </button>
             ))}
           </div>
-          <div className="flex-1 max-w-md relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search by name or source..."
-              value={filters.search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#18181b] border border-gray-800 rounded text-sm focus:outline-none focus:border-blue-500"
-            />
+
+          {/* View Type Filters + Search */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 uppercase tracking-wide mr-2">View:</span>
+              {viewTypeFilterButtons.map(filter => (
+                <button
+                  key={filter.id}
+                  onClick={() => setViewTypeFilter(filter.id as any)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    filters.viewType === filter.id
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {filter.icon && <span className="mr-1">{filter.icon}</span>}
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Selection Stats */}
+            {selectedCount > 0 && selectionStats.hasMixedTypes && (
+              <div className="px-3 py-1 bg-yellow-900/20 border border-yellow-800/30 rounded text-xs text-yellow-400">
+                Mixed: {selectionStats.gisCount} GIS, {selectionStats.threejsCount} 3D
+              </div>
+            )}
+
+            <div className="flex-1 max-w-md relative ml-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by name or source..."
+                value={filters.search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-[#18181b] border border-gray-800 rounded text-sm focus:outline-none focus:border-blue-500"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -430,6 +536,9 @@ const DatasetManagement: React.FC = () => {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-24">
                   Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">
+                  View
                 </th>
                 <th 
                   className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
@@ -460,10 +569,10 @@ const DatasetManagement: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/50">
+            <tbody className="divide-y divide-gray-800/50 relative">
               {isEmpty ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
+                  <td colSpan={8} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <Database className="w-12 h-12 text-gray-600" />
                       <p className="text-gray-400">No datasets found</p>
@@ -505,6 +614,12 @@ const DatasetManagement: React.FC = () => {
                           dataset.status === 'active' ? 'animate-pulse shadow-lg ' + statusConfig[dataset.status].glow : ''
                         }`}></div>
                         <span className="text-sm text-gray-400">{statusConfig[dataset.status].label}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base">{getViewTypeIcon(dataset.viewType)}</span>
+                        <span className="text-xs text-gray-500">{getViewTypeLabel(dataset.viewType)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -560,70 +675,22 @@ const DatasetManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="relative">
+                      <div className="flex justify-end">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenDropdown(openDropdown === dataset.id ? null : dataset.id);
-                          }}
-                          className="p-1 hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                        {openDropdown === dataset.id && (
-                          <div className="absolute right-0 mt-2 w-56 bg-[#18181b] border border-gray-800 rounded-lg shadow-xl z-50">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.location.href = `/datasets/${dataset.id}`;
-                              }}
-                              className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left"
-                            >
-                              <ExternalLink className="w-4 h-4" /> View Details
-                            </button>
-                            <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
-                              <Play className="w-4 h-4" /> Run AI Analysis
-                            </button>
-                            <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
-                              <Download className="w-4 h-4" /> Export Data
-                            </button>
-                            <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
-                              <Bell className="w-4 h-4" /> Configure Alerts
-                            </button>
-                            <div className="border-t border-gray-800 my-1"></div>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleArchive(dataset.id);
-                              }}
-                              disabled={archiveDataset.isPending}
-                              className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left disabled:opacity-50"
-                            >
-                              {archiveDataset.isPending ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Archive className="w-4 h-4" />
-                              )}
-                              Archive
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(dataset.id);
-                              }}
-                              disabled={deleteDataset.isPending}
-                              className="w-full px-4 py-2 hover:bg-red-900/20 text-red-400 flex items-center gap-2 text-sm text-left disabled:opacity-50"
-                            >
-                              {deleteDataset.isPending ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setDropdownPosition({
+                                top: rect.bottom + window.scrollY,
+                                left: rect.right - 224,
+                              });
+                              setOpenDropdown(openDropdown === dataset.id ? null : dataset.id);
+                            }}
+                            className="p-1 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-gray-100"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                        </button>                   
+                      </div>                      
                     </td>
                   </tr>
                 ))
@@ -648,10 +715,91 @@ const DatasetManagement: React.FC = () => {
         </div>
       </div>
 
+
+      {/* Dropdown renderizado fuera de la tabla */}
+      {openDropdown !== null && dropdownPosition && (
+        <>
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenDropdown(null);
+            }}
+          />
+          <div 
+            className="fixed w-56 bg-[#18181b] border border-gray-800 rounded-lg shadow-2xl z-50"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+            }}
+          >
+            {(() => {
+              const dataset = filteredDatasets.find(ds => ds.id === openDropdown);
+              if (!dataset) return null;
+              return (
+                <>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/datasets/${dataset.id}`);
+                    }}
+                    className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left"
+                  >
+                    <ExternalLink className="w-4 h-4" /> View Details
+                  </button>
+                  <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
+                    <Play className="w-4 h-4" /> Run AI Analysis
+                  </button>
+                  <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
+                    <Download className="w-4 h-4" /> Export Data
+                  </button>
+                  <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
+                    <Bell className="w-4 h-4" /> Configure Alerts
+                  </button>
+                  <div className="border-t border-gray-800 my-1"></div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleArchive(dataset.id);
+                    }}
+                    disabled={archiveDataset.isPending}
+                    className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left disabled:opacity-50"
+                  >
+                    {archiveDataset.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Archive className="w-4 h-4" />
+                    )}
+                    Archive
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(dataset.id);
+                    }}
+                    disabled={deleteDataset.isPending}
+                    className="w-full px-4 py-2 hover:bg-red-900/20 text-red-400 flex items-center gap-2 text-sm text-left disabled:opacity-50"
+                  >
+                    {deleteDataset.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    Delete
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        </>
+      )}
+
+
+
       {/* New Dataset Modal */}
       {showNewDatasetModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a0a] border border-gray-800 rounded-lg w-full max-w-2xl shadow-2xl">
+          <div className="bg-[#0a0a0a] border border-gray-800 rounded-lg w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h2 className="text-xl font-bold">New Dataset</h2>
@@ -682,7 +830,7 @@ const DatasetManagement: React.FC = () => {
             </div>
 
             {/* Form Content - MQTT Tab */}
-            <div className="px-6 py-6">
+            <div className="px-6 py-6 overflow-y-auto flex-1">
               {selectedTab === 'mqtt' && (
                 <div className="space-y-4">
                   {/* Connection Info Banner */}
@@ -720,6 +868,45 @@ const DatasetManagement: React.FC = () => {
                       className="w-full px-3 py-2 bg-[#18181b] border border-gray-800 rounded text-sm focus:outline-none focus:border-blue-500"
                       placeholder="Brief description of this dataset"
                     />
+                  </div>
+
+                  {/* 🆕 AGREGAR ESTE BLOQUE COMPLETO */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Visualization Type <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, viewType: 'gis'})}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                          formData.viewType === 'gis'
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-gray-800 bg-[#18181b] hover:border-gray-700'
+                        }`}
+                      >
+                        <Map className="w-5 h-5" />
+                        <div className="text-left">
+                          <div className="font-medium text-sm">GIS Map</div>
+                          <div className="text-xs text-gray-500">2D geographical view</div>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, viewType: 'threejs'})}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                          formData.viewType === 'threejs'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-gray-800 bg-[#18181b] hover:border-gray-700'
+                        }`}
+                      >
+                        <Box className="w-5 h-5" />
+                        <div className="text-left">
+                          <div className="font-medium text-sm">3D View</div>
+                          <div className="text-xs text-gray-500">Interactive 3D space</div>
+                        </div>
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1053,12 +1240,13 @@ const DatasetManagement: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-end gap-3 flex-shrink-0">
               <button
                 onClick={() => {
                   setShowNewDatasetModal(false);
                   setFormData({
                     name: '',
+                    viewType: 'gis',
                     description: '',
                     brokerUrl: '',
                     topic: '',

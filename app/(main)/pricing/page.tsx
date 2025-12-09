@@ -6,7 +6,8 @@ import { redirect } from "next/navigation"
 import { currentUser } from "@clerk/nextjs/server"
 import Link from "next/link"
 import { checkAuthenticationAndSubscription } from "@/lib/checkAuthSubscription"
-import PricingCardClient from "./PricingCardClient" // Componente cliente separado
+// import PricingCardClient from "./PricingCardClient" // Componente cliente separado
+import PricingCardClient from "./PricingCardClientGis" // Componente cliente separado
 
 // Helper function to ensure valid URL format
 function ensureValidUrl(url: string): string {

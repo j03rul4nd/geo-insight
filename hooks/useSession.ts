@@ -1,5 +1,6 @@
-// src/hooks/use-session.ts
+// src/hooks/useSession.ts
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 // Tipos
 export interface SessionUser {
@@ -48,6 +49,8 @@ export interface SessionResponse {
 
 // Hook principal
 export function useSession() {
+  const queryClient = useQueryClient();
+  
   const query = useQuery<SessionResponse>({
     queryKey: ['session'],
     queryFn: async () => {
@@ -62,9 +65,28 @@ export function useSession() {
       
       return response.json();
     },
-    staleTime: 1000 * 60 * 5,
+    // ✅ Solo se refresca cuando la ventana recupera el foco
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30, // Mantener en caché 30 minutos
+    refetchOnWindowFocus: true, // Refrescar cuando el usuario vuelve a la pestaña
+    refetchOnMount: false, // No refrescar en cada mount
+    refetchOnReconnect: true, // Refrescar si se recupera la conexión
     retry: 1,
   });
+
+  // ✅ Listener para eventos custom que invalidan la sesión
+  useEffect(() => {
+    const handleInvalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+    };
+
+    // Escuchar eventos personalizados
+    window.addEventListener('session:invalidate', handleInvalidate);
+    
+    return () => {
+      window.removeEventListener('session:invalidate', handleInvalidate);
+    };
+  }, [queryClient]);
 
   return {
     ...query,
@@ -91,12 +113,14 @@ export function useSession() {
   };
 }
 
-// Hook para invalidar
+// Hook para invalidar manualmente (úsalo después de acciones importantes)
 export function useInvalidateSession() {
   const queryClient = useQueryClient();
   
   return () => {
     queryClient.invalidateQueries({ queryKey: ['session'] });
+    // También disparar evento para otros componentes
+    window.dispatchEvent(new CustomEvent('session:invalidate'));
   };
 }
 
@@ -124,5 +148,33 @@ export function useLimit(type: 'datasets' | 'aiInsights' | 'dataPoints') {
     canUse: limitData.isUnlimited || limitData.remaining > 0,
     isNearLimit: limitData.percentage >= 80 && !limitData.isUnlimited,
     isCritical: limitData.percentage >= 95 && !limitData.isUnlimited,
+  };
+}
+
+// ✅ Hook para actualizar optimísticamente los límites (sin llamada al servidor)
+export function useOptimisticUpdateLimits() {
+  const queryClient = useQueryClient();
+  
+  return (type: 'datasets' | 'aiInsights' | 'dataPoints', increment: number = 1) => {
+    queryClient.setQueryData<SessionResponse>(['session'], (old) => {
+      if (!old) return old;
+      
+      return {
+        ...old,
+        limits: {
+          ...old.limits,
+          [type]: {
+            ...old.limits[type],
+            used: old.limits[type].used + increment,
+            remaining: old.limits[type].isUnlimited 
+              ? -1 
+              : Math.max(0, old.limits[type].remaining - increment),
+            percentage: old.limits[type].isUnlimited 
+              ? 0 
+              : Math.min(100, ((old.limits[type].used + increment) / old.limits[type].limit) * 100),
+          },
+        },
+      };
+    });
   };
 }

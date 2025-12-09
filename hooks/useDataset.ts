@@ -1,6 +1,8 @@
 // hooks/useDataset.ts
 import { useState, useEffect, useCallback } from 'react';
 
+
+export type ViewType = 'gis' | 'threejs';
 export interface DatasetDetail {
   id: string;
   name: string;
@@ -13,6 +15,8 @@ export interface DatasetDetail {
   mqttTopic?: string;
   mqttUsername?: string;
   mqttPasswordSet?: boolean;
+
+  viewType: ViewType;
   
   // Webhook config
   webhookUrl?: string;
