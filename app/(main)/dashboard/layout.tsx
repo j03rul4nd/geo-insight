@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Test_navbar";
 
 export default function MainLayout({
   children,
@@ -9,7 +9,7 @@ export default function MainLayout({
     <>     
       {/* Contenido principal */}
       <div className="relative z-10">
-        {/* <Navbar /> */}
+        <Navbar />
         {children}
       </div>
     </>

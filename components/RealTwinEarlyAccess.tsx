@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from "react";
+import { useEarlyAccessCTATranslation } from "../hooks/useLanguage";
 
 interface FormData {
   name: string;
@@ -9,6 +10,9 @@ interface FormData {
 }
 
 export function EarlyAccessCTA() {
+  const { t, language, isClient } = useEarlyAccessCTATranslation();
+  const [isLoaded, setIsLoaded] = useState(false);
+  
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -19,6 +23,29 @@ export function EarlyAccessCTA() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const leftColumnRef = useRef<HTMLDivElement>(null);
+  const rightColumnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsLoaded(true);
+    
+    // Animación inicial simplificada
+    if (isClient) {
+      const elements = [leftColumnRef.current, rightColumnRef.current];
+      elements.forEach((el, index) => {
+        if (el) {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(30px)';
+          setTimeout(() => {
+            el.style.transition = 'all 0.8s ease-out';
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+          }, index * 200 + 300);
+        }
+      });
+    }
+  }, [isClient, language]); // Re-animar cuando cambie el idioma
 
   const handleSubmit = async () => {
     if (!formData.email) return;
@@ -66,7 +93,7 @@ export function EarlyAccessCTA() {
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 relative overflow-hidden">
       
       {/* Grid pattern background with gradient opacity */}
-      <div className="absolute inset-0 opacity-30">
+      <div id="formJoinBeta" className="absolute inset-0 opacity-30">
         <div 
           className="w-full h-full"
           style={{
@@ -84,41 +111,37 @@ export function EarlyAccessCTA() {
       <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-16 items-start relative z-10">
         
         {/* Left Column - Description */}
-        <div className="space-y-6 lg:pt-8">
+        <div ref={leftColumnRef} className="space-y-6 lg:pt-8">
           <div className="inline-block">
-            <span className="text-xs font-mono text-zinc-600 tracking-wider">EARLY ACCESS</span>
+            <span className="text-xs font-mono text-zinc-600 tracking-wider">
+              {t.badge}
+            </span>
           </div>
           
           <h1 className="text-5xl lg:text-6xl font-light tracking-tight text-white leading-tight">
-            Join the beta cohort
+            {t.title}
           </h1>
           
           <div className="space-y-4 text-zinc-400 text-lg leading-relaxed">
-            <p>
-              Intended for teams operating live MQTT streams where map-level visibility 
-              affects operations: NOCs, control rooms, fleet, utilities, industrial systems.
-            </p>
-            <p>
-              If you need real-time spatial awareness from existing MQTT infrastructure 
-              and are willing to trial a pre-launch tool, leave your details below.
-            </p>
+            <p>{t.paragraph1}</p>
+            <p>{t.paragraph2}</p>
           </div>
         </div>
 
         {/* Right Column - Form */}
-        <div className="space-y-6 lg:pt-8">
+        <div ref={rightColumnRef} className="space-y-6 lg:pt-8">
           
           {/* Name */}
           <div>
             <label className="block text-xs font-mono text-zinc-500 mb-2 uppercase tracking-wider">
-              Name
+              {t.form.nameLabel}
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter your name"
+              placeholder={t.form.namePlaceholder}
               className="w-full bg-transparent border-b border-zinc-800 px-0 py-3 text-white placeholder-zinc-700 focus:border-zinc-600 focus:outline-none transition"
             />
           </div>
@@ -126,14 +149,14 @@ export function EarlyAccessCTA() {
           {/* Email */}
           <div>
             <label className="block text-xs font-mono text-zinc-500 mb-2 uppercase tracking-wider">
-              Email
+              {t.form.emailLabel}
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email"
+              placeholder={t.form.emailPlaceholder}
               className="w-full bg-transparent border-b border-zinc-800 px-0 py-3 text-white placeholder-zinc-700 focus:border-zinc-600 focus:outline-none transition"
             />
           </div>
@@ -141,14 +164,14 @@ export function EarlyAccessCTA() {
           {/* Organization */}
           <div>
             <label className="block text-xs font-mono text-zinc-500 mb-2 uppercase tracking-wider">
-              Organization
+              {t.form.organizationLabel}
             </label>
             <input
               type="text"
               name="organization"
               value={formData.organization}
               onChange={handleChange}
-              placeholder="Enter your organization"
+              placeholder={t.form.organizationPlaceholder}
               className="w-full bg-transparent border-b border-zinc-800 px-0 py-3 text-white placeholder-zinc-700 focus:border-zinc-600 focus:outline-none transition"
             />
           </div>
@@ -166,12 +189,12 @@ export function EarlyAccessCTA() {
             disabled={submitted || loading || !formData.email}
             className="w-full bg-white hover:bg-zinc-100 text-black font-medium py-4 px-6 transition duration-150 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white mt-8"
           >
-            {loading ? 'SENDING...' : submitted ? 'SUBMITTED' : 'GET EARLY ACCESS'}
+            {loading ? t.form.submitting : submitted ? t.form.submitted : t.form.submitButton}
           </button>
 
           {/* Privacy note */}
           <p className="text-xs text-zinc-600 leading-relaxed pt-2">
-            Submissions are reviewed manually. Used only to evaluate fit and coordinate contact.
+            {t.form.privacyNote}
           </p>
 
         </div>

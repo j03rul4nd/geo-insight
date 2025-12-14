@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import DashboardContent from "./_components/DashboardContentGis"
 import AuthRequiredPopup from "@/components/AuthRequiredPopup"
+import { DigitalTwinDashboard } from "./_components/DashboardDemo"
 import { Toaster } from 'sonner';
 
 // Componente de loading opcional
@@ -26,7 +27,8 @@ export default function Dashboard() {
       <AuthRequiredPopup showDelay={1500} />
       
       <Suspense fallback={<DashboardLoading />}>
-        <DashboardContent />     
+        {/* <DashboardContent />      */}
+        <DigitalTwinDashboard />
       </Suspense>
     </div>   
   ) 

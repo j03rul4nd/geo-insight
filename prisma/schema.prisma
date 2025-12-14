@@ -137,7 +137,8 @@ model Dataset {
   lastDataReceived DateTime?
   avgUpdateFreq    Int?
   alertsEnabled    Boolean     @default(false)
-  alertThresholds  Json?
+  alertThresholds  Json?       // Mantener por compatibilidad, migrar después
+  alertRules       AlertRule[] // 🆕 AGREGAR ESTO
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   maxDataPoints    Int         @default(100)
@@ -392,27 +393,69 @@ model Layer {
   @@index([showTrail])
 }
 
+
+model AlertRule {
+  id              String   @id @default(cuid())
+  datasetId       String
+  
+  // Configuración de la regla
+  name            String
+  description     String?
+  metricPath      String   // "value" o "metadata.temperature" o "metadata.speed"
+  condition       String   // "greater_than", "less_than", "equals", "not_equals", "between"
+  thresholdValue  Float
+  thresholdMax    Float?   // Para condition "between"
+  severity        String   // "info", "warning", "critical"
+  
+  // Control y comportamiento
+  enabled         Boolean  @default(true)
+  cooldownMinutes Int      @default(15) // No disparar la misma alerta repetidamente
+  
+  // Notificaciones
+  notifyEmail     Boolean  @default(true)
+  notifySlack     Boolean  @default(false)
+  
+  // Metadata
+  lastTriggered   DateTime?
+  triggerCount    Int      @default(0)
+  
+  // Relaciones
+  dataset         Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  alerts          Alert[]  // Alertas que esta regla ha disparado
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([datasetId, enabled])
+  @@index([datasetId, createdAt])
+}
+
 model Alert {
-  id             String    @id @default(cuid())
+  id             String     @id @default(cuid())
   datasetId      String
+  alertRuleId    String?    // 🆕 AGREGAR ESTO
+  
   name           String
   condition      String
   thresholdValue Float
   currentValue   Float
-  status         String    @default("active")
+  status         String     @default("active")
   severity       String
   message        String
-  triggeredAt    DateTime  @default(now())
+  triggeredAt    DateTime   @default(now())
   acknowledgedAt DateTime?
   acknowledgedBy String?
   resolvedAt     DateTime?
   mutedUntil     DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  dataset        Dataset   @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  
+  dataset        Dataset    @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  alertRule      AlertRule? @relation(fields: [alertRuleId], references: [id], onDelete: SetNull) // 🆕 AGREGAR ESTO
 
   @@index([datasetId, status])
   @@index([status, severity])
+  @@index([alertRuleId]) // 🆕 AGREGAR ESTO
 }
 
 model Insight {

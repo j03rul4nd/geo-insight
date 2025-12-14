@@ -29,7 +29,7 @@ import LayersList, { type VisualizationLayer } from '@/components/LayersList';
 import MappingConfigurator from '@/components/MappingConfigurator/MappingConfigurator';
 import { useDatasetMapping } from '@/hooks/useDatasetMapping';
 
-
+import { AlertRulesManager } from '@/components/AlertRulesManager';
 // ============================================
 // TYPES 
 // ============================================
@@ -846,6 +846,15 @@ const DatasetViewer: React.FC<DatasetViewerProps> = ({ datasetId }) => {
                 </div>
               )}
             </div>
+          </div>
+
+
+          {/* Alert Rules Manager */}
+          <div className="mb-6">
+            <AlertRulesManager 
+              datasetId={datasetId}
+              // className="w-full"
+            />
           </div>
 
           {/* Export Options */}

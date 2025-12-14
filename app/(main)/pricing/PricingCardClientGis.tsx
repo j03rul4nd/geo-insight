@@ -21,56 +21,93 @@ export default function PricingCardClient({
     const [showAllFeatures, setShowAllFeatures] = useState(false)
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
-            {/* Header */}
-            <header className="w-full border-b border-neutral-900/80 bg-neutral-950/95 backdrop-blur">
+        <div className="min-h-screen text-neutral-100 antialiased">          
+            <main className="flex-1 py-10 sm:py-14 lg:py-20 px-4 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-6xl flex items-center justify-between py-3 sm:py-4 px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center space-x-2">
-                        <div className="h-7 w-7 rounded-sm bg-neutral-950 border border-neutral-700/80 flex items-center justify-center shadow-[0_0_0_1px_rgba(0,0,0,0.9)]">
-                            <span className="text-xs tracking-tight font-semibold text-neutral-50">RT</span>
-                        </div>
-                        <div className="flex flex-col leading-none">
-                            <span className="text-xs tracking-tight font-medium text-neutral-200 uppercase">Realtwin</span>
-                            <span className="text-[0.65rem] tracking-tight text-neutral-500">Operational Geospatial Layer</span>
-                        </div>
-                    </div>
                     <a 
                         href={backLink}
-                        className="text-xs text-neutral-400 hover:text-neutral-100 transition-colors tracking-tight"
+                        className="glass-button rounded-full px-3 py-1 text-xs text-neutral-100 hover:text-white transition-colors tracking-tight relative overflow-hidden"
+                        style={{
+                            background: 'rgba(20, 20, 20, 0.7)',
+                            backdropFilter: 'blur(40px)',
+                            WebkitBackdropFilter: 'blur(40px)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
+                        }}
                     >
                         ← Back to Home
                     </a>
                 </div>
-            </header>
-
-            <main className="flex-1 py-10 sm:py-14 lg:py-20 px-4 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-6xl">
                     {/* Badge */}
                     <div className="flex justify-center mb-6">
-                        <div className="inline-flex items-center space-x-2 rounded-full border border-neutral-800/80 bg-neutral-950/80 px-3 py-1 shadow-[0_0_0_1px_rgba(0,0,0,0.9)]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80 shadow-[0_0_0_3px_rgba(16,185,129,0.25)]"></span>
-                            <span className="text-[0.7rem] sm:text-xs tracking-tight text-neutral-400">Early Access · Operational Pricing</span>
+                        <div 
+                            className="inline-flex items-center space-x-2 rounded-full px-3 py-1 relative overflow-hidden"
+                            style={{
+                                background: 'rgba(16, 185, 129, 0.15)',
+                                backdropFilter: 'blur(40px)',
+                                WebkitBackdropFilter: 'blur(40px)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                boxShadow: '0 8px 32px 0 rgba(16, 185, 129, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
+                            }}
+                        >
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_3px_rgba(16,185,129,0.4)]"></span>
+                            <span className="text-[0.7rem] sm:text-xs tracking-tight text-white font-medium">Early Access · Operational Pricing</span>
                         </div>
                     </div>
 
                     {/* Title */}
                     <div className="text-center mb-12 space-y-4">
-                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-neutral-50">
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                             Early Access Pricing
                         </h1>
-                        <p className="text-base sm:text-lg text-neutral-300/90 max-w-2xl mx-auto">
+                        <p className="text-base sm:text-lg text-neutral-100 max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                             Fixed capacity tiers for teams running continuous operations. Scale from pilot deployments to enterprise infrastructure monitoring.
                         </p>
                     </div>
 
                     {/* Pricing Card */}
-                    <div className="max-w-4xl mx-auto rounded-xl border border-neutral-800/90 bg-neutral-950/95 shadow-[0_0_0_1px_rgba(0,0,0,1)] overflow-hidden">
+                    <div 
+                        className="max-w-4xl mx-auto rounded-[28px] overflow-hidden relative"
+                        style={{
+                            background: 'rgba(30, 30, 30, 0.6)',
+                            backdropFilter: 'blur(60px)',
+                            WebkitBackdropFilter: 'blur(60px)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)'
+                        }}
+                    >
+                        {/* Gradient border effect */}
+                        <div 
+                            className="absolute inset-0 rounded-[28px] pointer-events-none"
+                            style={{
+                                padding: '1px',
+                                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 41%, rgba(255, 255, 255, 0) 57%, rgba(255, 255, 255, 0.1) 100%)',
+                                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                WebkitMaskComposite: 'xor',
+                                maskComposite: 'exclude'
+                            }}
+                        ></div>
+                        
                         {/* Header */}
-                        <div className="border-b border-neutral-900/80 bg-gradient-to-r from-emerald-500/5 to-emerald-400/5 px-4 sm:px-6 py-3">
+                        <div 
+                            className="border-b px-4 sm:px-6 py-3 relative"
+                            style={{
+                                borderColor: 'rgba(255, 255, 255, 0.1)',
+                                background: 'linear-gradient(to right, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.08))'
+                            }}
+                        >
                             <div className="flex items-center justify-between">
-                                <span className="text-xs tracking-tight text-emerald-300 uppercase font-medium">Enterprise Operations</span>
+                                <span className="text-xs tracking-tight text-emerald-300 uppercase font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Enterprise Operations</span>
                                 {isSubscribed && (
-                                    <div className="bg-emerald-400/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full border border-emerald-400/30">
+                                    <div 
+                                        className="text-emerald-200 text-xs px-2.5 py-1 rounded-full"
+                                        style={{
+                                            background: 'rgba(16, 185, 129, 0.25)',
+                                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                                            boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
+                                        }}
+                                    >
                                         Active
                                     </div>
                                 )}
@@ -81,66 +118,111 @@ export default function PricingCardClient({
                             {/* Plan Details */}
                             <div className="mb-8">
                                 <div className="flex items-baseline justify-center mb-2">
-                                    <span className="text-5xl font-semibold tracking-tight text-neutral-50">$4,999</span>
-                                    <span className="text-xl text-neutral-400 ml-2">/month</span>
+                                    <span className="text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">$95</span>
+                                    <span className="text-xl text-neutral-200 ml-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">/month</span>
                                 </div>
-                                <p className="text-center text-sm text-neutral-400 tracking-tight">
+                                <p className="text-center text-sm text-neutral-200 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                                     Base tier · Scales with throughput requirements
                                 </p>
                             </div>
 
                             {/* Key Metrics Grid */}
-                            <div className="rounded-lg border border-neutral-800/80 bg-neutral-950/80 shadow-[0_0_0_1px_rgba(0,0,0,0.9)] mb-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-neutral-900/80">
+                            <div 
+                                className="rounded-2xl mb-6 relative overflow-hidden"
+                                style={{
+                                    background: 'rgba(20, 20, 20, 0.5)',
+                                    backdropFilter: 'blur(40px)',
+                                    WebkitBackdropFilter: 'blur(40px)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                    boxShadow: '0 4px 16px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                }}
+                            >
+                                <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-500 uppercase">Message Throughput</p>
-                                        <p className="mt-1 text-sm text-neutral-100 font-medium">50M msg/day</p>
-                                        <p className="mt-0.5 text-xs text-neutral-500">Burst capacity included</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Message Throughput</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">50M msg/day</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">Burst capacity included</p>
                                     </div>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-500 uppercase">Broker Connections</p>
-                                        <p className="mt-1 text-sm text-neutral-100 font-medium">Up to 5 brokers</p>
-                                        <p className="mt-0.5 text-xs text-neutral-500">Multi-cloud topology</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Broker Connections</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Up to 5 brokers</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">Multi-cloud topology</p>
                                     </div>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-500 uppercase">Data Retention</p>
-                                        <p className="mt-1 text-sm text-neutral-100 font-medium">90 days live</p>
-                                        <p className="mt-0.5 text-xs text-neutral-500">Archive on request</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Data Retention</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">90 days live</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">Archive on request</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Core Capabilities */}
                             <div className="space-y-3 mb-8">
-                                <div className="flex items-start space-x-3 p-3 rounded-lg border border-neutral-800/60 bg-neutral-950/60">
-                                    <Activity className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                                <div 
+                                    className="flex items-start space-x-3 p-3 rounded-xl relative overflow-hidden"
+                                    style={{
+                                        background: 'rgba(20, 20, 20, 0.5)',
+                                        backdropFilter: 'blur(40px)',
+                                        WebkitBackdropFilter: 'blur(40px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                    }}
+                                >
+                                    <Activity className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-neutral-100">Real-Time Geospatial Stream Processing</p>
-                                        <p className="text-xs text-neutral-400 mt-0.5">Sub-second MQTT ingest to 3D map rendering with asset reconciliation</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Real-Time Geospatial Stream Processing</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Sub-second MQTT ingest to 3D map rendering with asset reconciliation</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start space-x-3 p-3 rounded-lg border border-neutral-800/60 bg-neutral-950/60">
-                                    <Layers className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                                <div 
+                                    className="flex items-start space-x-3 p-3 rounded-xl relative overflow-hidden"
+                                    style={{
+                                        background: 'rgba(20, 20, 20, 0.5)',
+                                        backdropFilter: 'blur(40px)',
+                                        WebkitBackdropFilter: 'blur(40px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                    }}
+                                >
+                                    <Layers className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-neutral-100">Configurable Layer & Filter Rules</p>
-                                        <p className="text-xs text-neutral-400 mt-0.5">Define data contracts, hierarchies, and operational regions with schemas</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Configurable Layer & Filter Rules</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Define data contracts, hierarchies, and operational regions with schemas</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start space-x-3 p-3 rounded-lg border border-neutral-800/60 bg-neutral-950/60">
-                                    <AlarmCheck className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                                <div 
+                                    className="flex items-start space-x-3 p-3 rounded-xl relative overflow-hidden"
+                                    style={{
+                                        background: 'rgba(20, 20, 20, 0.5)',
+                                        backdropFilter: 'blur(40px)',
+                                        WebkitBackdropFilter: 'blur(40px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                    }}
+                                >
+                                    <AlarmCheck className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-neutral-100">Automated Visual Alerting</p>
-                                        <p className="text-xs text-neutral-400 mt-0.5">Encode thresholds and escalation states for instant incident detection</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Automated Visual Alerting</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Encode thresholds and escalation states for instant incident detection</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-start space-x-3 p-3 rounded-lg border border-neutral-800/60 bg-neutral-950/60">
-                                    <Radar className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
+                                <div 
+                                    className="flex items-start space-x-3 p-3 rounded-xl relative overflow-hidden"
+                                    style={{
+                                        background: 'rgba(20, 20, 20, 0.5)',
+                                        backdropFilter: 'blur(40px)',
+                                        WebkitBackdropFilter: 'blur(40px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                    }}
+                                >
+                                    <Radar className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-neutral-100">Unified Operational View</p>
-                                        <p className="text-xs text-neutral-400 mt-0.5">Single source of truth for operations, engineering, and field teams</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Unified Operational View</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Single source of truth for operations, engineering, and field teams</p>
                                     </div>
                                 </div>
                             </div>
@@ -151,14 +233,32 @@ export default function PricingCardClient({
                                     isSubscribed ? (
                                         <button 
                                             onClick={createCustomerPortal}
-                                            className="w-full inline-flex items-center justify-center rounded-md border border-neutral-700/80 bg-neutral-950/60 hover:bg-neutral-900 text-sm font-medium tracking-tight text-neutral-100 px-4 py-3 transition-colors"
+                                            className="w-full inline-flex items-center justify-center rounded-xl text-sm font-medium tracking-tight text-white px-4 py-3 transition-all relative overflow-hidden"
+                                            style={{
+                                                background: 'rgba(40, 40, 40, 0.6)',
+                                                backdropFilter: 'blur(40px)',
+                                                WebkitBackdropFilter: 'blur(40px)',
+                                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                boxShadow: '0 4px 16px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(50, 50, 50, 0.7)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(40, 40, 40, 0.6)'}
                                         >
                                             Manage Subscription
                                         </button>
                                     ) : (
                                         <button 
                                             onClick={createSubscription}
-                                            className="w-full inline-flex items-center justify-center rounded-md bg-emerald-400 hover:bg-emerald-300 text-neutral-950 text-sm font-medium tracking-tight px-4 py-3 transition-colors"
+                                            className="w-full inline-flex items-center justify-center rounded-xl text-sm font-medium tracking-tight text-neutral-950 px-4 py-3 transition-all relative overflow-hidden"
+                                            style={{
+                                                background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%)',
+                                                backdropFilter: 'blur(40px)',
+                                                WebkitBackdropFilter: 'blur(40px)',
+                                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                boxShadow: '0 8px 24px 0 rgba(16, 185, 129, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.3)'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 12px 32px 0 rgba(16, 185, 129, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.4)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 8px 24px 0 rgba(16, 185, 129, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.3)'}
                                         >
                                             Request Early Access
                                         </button>
@@ -166,25 +266,32 @@ export default function PricingCardClient({
                                 ) : (
                                     <a 
                                         href="/sign-in?redirect_url=/pricing"
-                                        className="w-full inline-flex items-center justify-center rounded-md bg-neutral-50 hover:bg-neutral-200 text-neutral-950 text-sm font-medium tracking-tight px-4 py-3 transition-colors"
+                                        className="w-full inline-flex items-center justify-center rounded-xl text-sm font-medium tracking-tight text-neutral-950 px-4 py-3 transition-all relative overflow-hidden"
+                                        style={{
+                                            background: 'linear-gradient(180deg, rgba(250, 250, 250, 0.95) 0%, rgba(229, 229, 229, 0.95) 100%)',
+                                            backdropFilter: 'blur(40px)',
+                                            WebkitBackdropFilter: 'blur(40px)',
+                                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                                            boxShadow: '0 8px 24px 0 rgba(255, 255, 255, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)'
+                                        }}
                                     >
                                         Sign In to Access
                                     </a>
                                 )}
                             </div>
 
-                            <div className="flex items-center justify-center space-x-2 text-xs text-neutral-500 mb-6">
-                                <Shield className="w-4 h-4 text-emerald-400/80" strokeWidth={1.5} />
-                                <p>Priority evaluation for 24/7 operations · High-consequence systems</p>
+                            <div className="flex items-center justify-center space-x-2 text-xs text-neutral-300 mb-6">
+                                <Shield className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
+                                <p className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Priority evaluation for 24/7 operations · High-consequence systems</p>
                             </div>
 
                             {/* Expandable Details */}
-                            <div className="border-t border-neutral-900/80 pt-6">
+                            <div className="border-t pt-6" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                                 <button
                                     onClick={() => setShowAllFeatures(!showAllFeatures)}
-                                    className="flex items-center justify-between w-full text-neutral-300 hover:text-neutral-100 transition-colors"
+                                    className="flex items-center justify-between w-full text-neutral-200 hover:text-white transition-colors"
                                 >
-                                    <span className="text-sm font-medium tracking-tight">
+                                    <span className="text-sm font-medium tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                                         {showAllFeatures ? 'Hide detailed specifications' : 'View detailed specifications'}
                                     </span>
                                     {showAllFeatures ? <ChevronUp className="w-4 h-4" strokeWidth={1.5} /> : <ChevronDown className="w-4 h-4" strokeWidth={1.5} />}
@@ -194,19 +301,19 @@ export default function PricingCardClient({
                                     <div className="mt-6 space-y-6 animate-in slide-in-from-top duration-300">
                                         {/* Platform Access */}
                                         <div className="space-y-3">
-                                            <h4 className="text-sm font-semibold text-neutral-100 tracking-tight uppercase text-neutral-500">Platform Access</h4>
+                                            <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Platform Access</h4>
                                             <div className="space-y-2 ml-2">
                                                 <div className="flex items-start space-x-2 text-sm">
-                                                    <span className="mt-1 h-1 w-4 bg-neutral-600 rounded"></span>
-                                                    <span className="text-neutral-300">Dedicated deployment environment with isolated data plane</span>
+                                                    <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
+                                                    <span className="text-neutral-200">Dedicated deployment environment with isolated data plane</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
-                                                    <span className="mt-1 h-1 w-4 bg-neutral-600 rounded"></span>
-                                                    <span className="text-neutral-300">SSO integration (SAML 2.0 / OIDC) with role-based access control</span>
+                                                    <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
+                                                    <span className="text-neutral-200">SSO integration (SAML 2.0 / OIDC) with role-based access control</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
-                                                    <span className="mt-1 h-1 w-4 bg-neutral-600 rounded"></span>
-                                                    <span className="text-neutral-300">API access for programmatic layer configuration and queries</span>
+                                                    <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
+                                                    <span className="text-neutral-200">API access for programmatic layer configuration and queries</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -214,19 +321,37 @@ export default function PricingCardClient({
                                         {/* Integration & Deployment */}
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-2">
-                                                <FileCode className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
-                                                <h4 className="text-sm font-semibold text-neutral-100 tracking-tight uppercase text-neutral-500">Integration & Deployment</h4>
+                                                <FileCode className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
+                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Integration & Deployment</h4>
                                             </div>
                                             <div className="grid sm:grid-cols-2 gap-3">
-                                                <div className="rounded-md border border-neutral-800/80 bg-neutral-950/80 px-3 py-2.5">
-                                                    <p className="text-[0.65rem] tracking-tight text-neutral-500 uppercase">Onboarding</p>
-                                                    <p className="mt-1 text-sm text-neutral-100">2-week guided setup</p>
-                                                    <p className="mt-0.5 text-xs text-neutral-400">Schema design & broker config</p>
+                                                <div 
+                                                    className="rounded-xl px-3 py-2.5 relative overflow-hidden"
+                                                    style={{
+                                                        background: 'rgba(20, 20, 20, 0.5)',
+                                                        backdropFilter: 'blur(40px)',
+                                                        WebkitBackdropFilter: 'blur(40px)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                                    }}
+                                                >
+                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Onboarding</p>
+                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">2-week guided setup</p>
+                                                    <p className="mt-0.5 text-xs text-neutral-300">Schema design & broker config</p>
                                                 </div>
-                                                <div className="rounded-md border border-neutral-800/80 bg-neutral-950/80 px-3 py-2.5">
-                                                    <p className="text-[0.65rem] tracking-tight text-neutral-500 uppercase">Support SLA</p>
-                                                    <p className="mt-1 text-sm text-neutral-100">4-hour response</p>
-                                                    <p className="mt-0.5 text-xs text-neutral-400">Critical incidents prioritized</p>
+                                                <div 
+                                                    className="rounded-xl px-3 py-2.5 relative overflow-hidden"
+                                                    style={{
+                                                        background: 'rgba(20, 20, 20, 0.5)',
+                                                        backdropFilter: 'blur(40px)',
+                                                        WebkitBackdropFilter: 'blur(40px)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
+                                                    }}
+                                                >
+                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Support SLA</p>
+                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">4-hour response</p>
+                                                    <p className="mt-0.5 text-xs text-neutral-300">Critical incidents prioritized</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -234,29 +359,38 @@ export default function PricingCardClient({
                                         {/* Compliance & Security */}
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-2">
-                                                <Globe className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
-                                                <h4 className="text-sm font-semibold text-neutral-100 tracking-tight uppercase text-neutral-500">Compliance & Security</h4>
+                                                <Globe className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
+                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Compliance & Security</h4>
                                             </div>
-                                            <div className="bg-gradient-to-r from-emerald-500/5 to-emerald-400/5 border border-emerald-500/20 rounded-lg p-4">
+                                            <div 
+                                                className="rounded-2xl p-4 relative overflow-hidden"
+                                                style={{
+                                                    background: 'linear-gradient(to right, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.08))',
+                                                    backdropFilter: 'blur(40px)',
+                                                    WebkitBackdropFilter: 'blur(40px)',
+                                                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                                                    boxShadow: '0 4px 16px 0 rgba(16, 185, 129, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
+                                                }}
+                                            >
                                                 <div className="grid sm:grid-cols-3 gap-3 text-xs">
                                                     <div className="text-center">
-                                                        <p className="text-neutral-100 font-medium">Data residency</p>
-                                                        <p className="text-neutral-400">Region-specific hosting</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Data residency</p>
+                                                        <p className="text-neutral-200">Region-specific hosting</p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-neutral-100 font-medium">Audit logs</p>
-                                                        <p className="text-neutral-400">Full activity tracking</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Audit logs</p>
+                                                        <p className="text-neutral-200">Full activity tracking</p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-neutral-100 font-medium">Encryption</p>
-                                                        <p className="text-neutral-400">At-rest & in-transit</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Encryption</p>
+                                                        <p className="text-neutral-200">At-rest & in-transit</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Usage Notes */}
-                                        <div className="text-xs text-neutral-500 space-y-2 border-t border-neutral-900/80 pt-4">
+                                        <div className="text-xs text-neutral-300 space-y-2 border-t pt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                                             <p>* Message throughput scales with additional capacity tiers. Contact for custom requirements beyond 50M/day.</p>
                                             <p>* Early access prioritizes teams with continuous operations, safety-critical systems, or regulatory requirements.</p>
                                             <p>* No marketing sequences—coordination strictly for evaluation, deployment, and operational updates.</p>
@@ -268,23 +402,6 @@ export default function PricingCardClient({
                     </div>
                 </div>
             </main>
-
-            {/* Footer */}
-            <footer className="border-t border-neutral-900/80 bg-neutral-950">
-                <div className="mx-auto max-w-6xl flex items-center justify-between py-3 sm:py-4 px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center space-x-2">
-                        <span className="text-[0.7rem] text-neutral-600 tracking-tight">
-                            © RealTwin · Internal evaluation only
-                        </span>
-                    </div>
-                    <div className="hidden sm:flex items-center space-x-3 text-[0.7rem] text-neutral-600">
-                        <div className="flex items-center space-x-1">
-                            <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
-                            <span>Data residency on request</span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
         </div>
     )
 }

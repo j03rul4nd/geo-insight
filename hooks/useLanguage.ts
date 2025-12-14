@@ -11,7 +11,15 @@ import {
   dispatchLanguageChange,
   LANGUAGE_CHANGE_EVENT,
   getNavTranslation,
+  getEarlyAccessCTATranslation,
   getHeroTranslation,
+  getFooterTranslation,
+  getRealTwinWhyItMattersTranslation,
+  getHeaderTermsTranslations,
+  getHeaderPrivacyTranslations,
+  getTermsTranslationsTranslations,
+  getCapabilitiesTranslation,
+  getPrivacyTranslations,
   getPublicInvoiceTranslation,
   getInvoiceGeneratorTranslation, // ← Nueva importación
   getInvoiceLanguageSelectorTranslation,
@@ -83,6 +91,88 @@ export const useHeroTranslation = () => {
     isClient
   };
 };
+
+export const useCapabilitiesTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getCapabilitiesTranslation(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
+
+export const useHeaderTermsTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getHeaderTermsTranslations(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
+
+export const useRealTwinWhyItMattersTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+
+  return {
+    t: getRealTwinWhyItMattersTranslation(language),
+    language,
+    changeLanguage,
+    isClient
+  };
+};
+
+export const useTermsTranslationsTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getTermsTranslationsTranslations(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
+
+export const useHeaderPrivacyTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getHeaderPrivacyTranslations(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
+
+export const usePrivacyTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getPrivacyTranslations(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
+
+export const useEarlyAccessCTATranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getEarlyAccessCTATranslation(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
+
+export const useFooterTranslation = () => {
+
+  const { language, changeLanguage, isClient } = useLanguage();
+  return {
+    t: getFooterTranslation(language),
+    language,
+    changeLanguage,
+    isClient
+  }
+}
 
 // Hook específico para traducciones de factura pública
 export const usePublicInvoiceTranslation = () => {

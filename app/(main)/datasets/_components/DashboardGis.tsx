@@ -10,26 +10,21 @@ import { useRouter } from 'next/navigation';
 import type { ViewType } from '@/types/Datasets';
 import { useSession, useInvalidateSession, useOptimisticUpdateLimits } from '@/hooks/useSession';
 
-type TabType = 'file' | 'mqtt' | 'api' | 'webhook';
+import { GlassLoader } from '@/components/datasets/GlassLoader';
+
+import { DatasetHeader } from '@/components/datasets/DatasetHeader';
+import { DatasetFilters } from '@/components/datasets/DatasetFilters';
+
+import { STATUS_CONFIG, TAB_CONFIGS, type TabType } from '@/components/datasets/constants/datasetConstants';
+import { 
+  getHealthColor, 
+  getHealthTextColor, 
+  getViewTypeIcon, 
+  getViewTypeLabel, 
+  formatLastUpdated 
+} from '@/utils/datasetUtils';
+
 type TestConnectionStatus = 'testing' | 'success' | 'error' | null;
-
-interface StatusConfig {
-  color: string;
-  label: string;
-  glow: string;
-}
-
-interface FilterButton {
-  id: string;
-  label: string;
-  icon: string | null;
-}
-
-interface TabConfig {
-  id: TabType;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}
 
 interface FormData {
   name: string;
@@ -119,35 +114,6 @@ const DatasetManagement: React.FC = () => {
   // ============================================
   // CONSTANTS
   // ============================================
-  const statusConfig: Record<string, StatusConfig> = {
-    active: { color: 'bg-green-500', label: 'Live', glow: 'shadow-green-500/50' },
-    idle: { color: 'bg-yellow-500', label: 'Idle', glow: 'shadow-yellow-500/50' },
-    error: { color: 'bg-red-500', label: 'Error', glow: 'shadow-red-500/50' },
-    archived: { color: 'bg-gray-500', label: 'Archived', glow: '' },
-    processing: { color: 'bg-blue-500', label: 'Processing', glow: 'shadow-blue-500/50' }
-  };
-
-  const statusFilterButtons: FilterButton[] = [
-    { id: 'all', label: 'All', icon: null },
-    { id: 'active', label: 'Live', icon: '🟢' },
-    { id: 'idle', label: 'Idle', icon: '🟡' },
-    { id: 'error', label: 'Error', icon: '🔴' },
-    { id: 'archived', label: 'Archived', icon: '📦' }
-  ];
-
-  const viewTypeFilterButtons: FilterButton[] = [
-    { id: 'all', label: 'All Views', icon: null },
-    { id: 'gis', label: 'GIS Map', icon: '🗺️' },
-    { id: 'threejs', label: '3D View', icon: '🎨' }
-  ];
-
-  const tabConfigs: TabConfig[] = [
-    { id: 'file', icon: Upload, label: 'Upload File' },
-    { id: 'mqtt', icon: Wifi, label: 'Connect MQTT' },
-    { id: 'api', icon: Globe, label: 'API Endpoint' },
-    { id: 'webhook', icon: Webhook, label: 'Webhook' }
-  ];
-
   const datasetLimit = limits?.datasets.limit ?? 1;
   const datasetUsed = limits?.datasets.used ?? datasets.length;
   const isDatasetLimitReached = !canCreateDataset;
@@ -298,51 +264,12 @@ const DatasetManagement: React.FC = () => {
     router.push(`/datasets/${datasetId}`);
   };
 
-  const getHealthColor = (health?: number): string => {
-    if (!health) return 'bg-gray-500';
-    if (health >= 95) return 'bg-green-500';
-    if (health >= 80) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  const getViewTypeIcon = (viewType: ViewType): string => {
-    return viewType === 'threejs' ? '🎨' : '🗺️';
-  };
-
-  const getViewTypeLabel = (viewType: ViewType): string => {
-    return viewType === 'threejs' ? '3D View' : 'GIS Map';
-  };
-
-  const formatLastUpdated = (date?: Date): string => {
-    if (!date) return 'Never';
-    
-    const now = new Date();
-    const lastUpdate = new Date(date);
-    const diffMs = now.getTime() - lastUpdate.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    
-    return lastUpdate.toLocaleDateString();
-  };
 
   // ============================================
   // LOADING & ERROR STATES
   // ============================================
   if (loading || sessionLoading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] text-gray-100 p-6 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-          <p className="text-gray-400">Loading datasets...</p>
-        </div>
-      </div>
-    );
+    return <GlassLoader message="Loading datasets..." />;
   }
 
   if (datasetsError) {
@@ -366,433 +293,332 @@ const DatasetManagement: React.FC = () => {
   // RENDER
   // ============================================
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100 p-6">
-      {/* Free Plan Banner */}
-      {!isPro && (
-        <div className="mb-4 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-lg px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm">
-            <Database className="w-4 h-4 text-blue-400" />
-            <span className="text-gray-300">
-              {datasetUsed}/{datasetLimit} datasets used
-            </span>
-            <span className="text-gray-500">•</span>
-            <span className="text-gray-400">Upgrade for unlimited</span>
-          </div>
-          <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium transition-colors">
-            Upgrade to Pro
-          </button>
-        </div>
-      )}
+    <div className="min-h-screen text-gray-100 p-6">
+ 
+    <div className="relative mb-6 rounded-3xl overflow-hidden">
+      <div className="absolute inset-0 bg-white/[0.08] backdrop-blur-[60px] backdrop-saturate-[180%]" />
+      <div className="absolute inset-0 rounded-3xl border border-white/20" 
+           style={{
+             background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.03) 100%)',
+             WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+             WebkitMaskComposite: 'xor',
+             maskComposite: 'exclude',
+             padding: '1px'
+           }} 
+      />
 
-      {/* Header Zone */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">Datasets</h1>
-            <span className="px-2 py-1 bg-gray-800 rounded text-sm text-gray-400 font-mono">
-              ({filteredDatasets.length} active)
-            </span>
-            {activeFiltersCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-400 flex items-center gap-1"
-              >
-                <X className="w-3 h-3" />
-                Clear filters
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {selectedCount > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowBulkActions(!showBulkActions)}
-                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded flex items-center gap-2 transition-colors"
-                >
-                  <Filter className="w-4 h-4" />
-                  Bulk Actions ({selectedCount})
-                </button>
-                {showBulkActions && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[#18181b] border border-gray-800 rounded-lg shadow-xl z-50">
-                    <button 
-                      onClick={handleBulkArchive}
-                      disabled={bulkArchive.isPending}
-                      className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm disabled:opacity-50"
+      <div className="relative p-6">
+        <DatasetHeader
+          isPro={isPro}
+          datasetUsed={datasetUsed}
+          datasetLimit={datasetLimit}
+          isDatasetLimitReached={isDatasetLimitReached}
+          filteredCount={filteredDatasets.length}
+          activeFiltersCount={activeFiltersCount}
+          selectedCount={selectedCount}
+          showBulkActions={showBulkActions}
+          bulkArchivePending={bulkArchive.isPending}
+          bulkDeletePending={bulkDelete.isPending}
+          onOpenNewDataset={() => setShowNewDatasetModal(true)}
+          onClearFilters={clearFilters}
+          onToggleBulkActions={() => setShowBulkActions(!showBulkActions)}
+          onBulkArchive={handleBulkArchive}
+          onBulkDelete={handleBulkDelete}
+        />
+
+        <div className="mb-6">
+          <DatasetFilters
+            statusFilter={filters.status}
+            viewTypeFilter={filters.viewType}
+            searchQuery={filters.search}
+            selectedCount={selectedCount}
+            selectionStats={selectionStats}
+            onStatusFilterChange={setStatusFilter}
+            onViewTypeFilterChange={setViewTypeFilter}
+            onSearchChange={setSearch}
+          />
+        </div>
+
+        {/* Table Zone */}
+        <div className="bg-[#0a0a0a] border border-gray-800 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto overflow-y-visible">
+            <table className="w-full">
+              <thead className="bg-[#18181b] sticky top-0 z-10">
+                <tr className="border-b border-gray-800">
+                  <th className="px-4 py-3 text-left w-12">
+                    <input
+                      type="checkbox"
+                      className="rounded bg-gray-800 border-gray-700"
+                      onChange={(e) => toggleAll(filteredDatasets.map(ds => ds.id))}
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = isSomeSelected && !isAllSelected;
+                      }}
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-24">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">
+                    View
+                  </th>
+                  <th 
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
+                    onClick={() => setSorting('name')}
+                  >
+                    Name {filters.sortBy === 'name' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
+                    onClick={() => setSorting('dataPoints')}
+                  >
+                    Data Points {filters.sortBy === 'dataPoints' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
+                    onClick={() => setSorting('lastUpdated')}
+                  >
+                    Last Updated {filters.sortBy === 'lastUpdated' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
+                    onClick={() => setSorting('health')}
+                  >
+                    Health {filters.sortBy === 'health' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/50 relative">
+                {isEmpty ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Database className="w-12 h-12 text-gray-600" />
+                        <p className="text-gray-400">No datasets found</p>
+                        {activeFiltersCount > 0 && (
+                          <button
+                            onClick={clearFilters}
+                            className="text-sm text-blue-500 hover:text-blue-400"
+                          >
+                            Clear filters
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredDatasets.map((dataset, idx) => (
+                    <tr
+                      key={dataset.id}
+                      className={`${
+                        idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-[#18181b]'
+                      } hover:bg-gray-800/50 transition-colors cursor-pointer group ${
+                        isRowDisabled(dataset) ? 'opacity-50' : ''
+                      }`}
+                      onClick={(e) => handleRowClick(e, dataset.id)}
                     >
-                      {bulkArchive.isPending ? (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={isRowSelected(dataset.id)}
+                          onChange={() => toggleRow(dataset.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isRowDisabled(dataset)}
+                          className="rounded bg-gray-800 border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${STATUS_CONFIG[dataset.status].color} ${
+                            dataset.status === 'active' ? 'animate-pulse shadow-lg ' + STATUS_CONFIG[dataset.status].glow : ''
+                          }`}></div>
+                          <span className="text-sm text-gray-400">{STATUS_CONFIG[dataset.status].label}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base">{getViewTypeIcon(dataset.viewType)}</span>
+                          <span className="text-xs text-gray-500">{getViewTypeLabel(dataset.viewType)}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-100">{dataset.name}</span>
+                          <span className="text-xs text-gray-500 font-mono">{dataset.source}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col font-mono">
+                          <span className="text-gray-100">{dataset.totalDataPoints.toLocaleString()}</span>
+                          <div className="flex items-center gap-1 text-xs">
+                            <span className="text-gray-500">{dataset.dataPointsToday.toLocaleString()} today</span>
+                            {dataset.trend === 'up' && (
+                              <span className="flex items-center text-green-500">
+                                <TrendingUp className="w-3 h-3" />
+                                {dataset.trendPercent}%
+                              </span>
+                            )}
+                            {dataset.trend === 'down' && (
+                              <span className="flex items-center text-red-500">
+                                <TrendingDown className="w-3 h-3" />
+                                {Math.abs(dataset.trendPercent || 0)}%
+                              </span>
+                            )}
+                            {dataset.trend === 'neutral' && (
+                              <span className="flex items-center text-gray-500">
+                                <Minus className="w-3 h-3" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm font-mono text-gray-400">
+                          {formatLastUpdated(dataset.lastDataReceived ? new Date(dataset.lastDataReceived) : undefined)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${getHealthColor(dataset.health)} transition-all`}
+                              style={{ width: `${dataset.health || 0}%` }}
+                            ></div>
+                          </div>
+                          <span className={`text-xs font-mono font-semibold ${
+                            (dataset.health || 0) >= 95 ? 'text-green-500' : 
+                            (dataset.health || 0) >= 80 ? 'text-yellow-500' : 'text-red-500'
+                          }`}>
+                            {(dataset.health || 0).toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end">
+                          <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setDropdownPosition({
+                                  top: rect.bottom + window.scrollY,
+                                  left: rect.right - 224,
+                                });
+                                setOpenDropdown(openDropdown === dataset.id ? null : dataset.id);
+                              }}
+                              className="p-1 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-gray-100"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                          </button>                   
+                        </div>                      
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="px-4 py-3 bg-[#18181b] border-t border-gray-800 flex items-center justify-between text-sm">
+            <span className="text-gray-400 font-mono">
+              Showing 1-{filteredDatasets.length} of {datasets.length}
+            </span>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded disabled:opacity-50" disabled>
+                Previous
+              </button>
+              <button className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded disabled:opacity-50" disabled>
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Dropdown renderizado fuera de la tabla */}
+        {openDropdown !== null && dropdownPosition && (
+          <>
+            <div 
+              className="fixed inset-0 z-40"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenDropdown(null);
+              }}
+            />
+            <div 
+              className="fixed w-56 bg-[#18181b] border border-gray-800 rounded-lg shadow-2xl z-50"
+              style={{
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`,
+              }}
+            >
+              {(() => {
+                const dataset = filteredDatasets.find(ds => ds.id === openDropdown);
+                if (!dataset) return null;
+                return (
+                  <>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/datasets/${dataset.id}`);
+                      }}
+                      className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left"
+                    >
+                      <ExternalLink className="w-4 h-4" /> View Details
+                    </button>
+                    <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
+                      <Play className="w-4 h-4" /> Run AI Analysis
+                    </button>
+                    <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
+                      <Download className="w-4 h-4" /> Export Data
+                    </button>
+                    <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
+                      <Bell className="w-4 h-4" /> Configure Alerts
+                    </button>
+                    <div className="border-t border-gray-800 my-1"></div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleArchive(dataset.id);
+                      }}
+                      disabled={archiveDataset.isPending}
+                      className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left disabled:opacity-50"
+                    >
+                      {archiveDataset.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Archive className="w-4 h-4" />
                       )}
                       Archive
                     </button>
-                    <div className="border-t border-gray-800 my-1"></div>
                     <button 
-                      onClick={handleBulkDelete}
-                      disabled={bulkDelete.isPending}
-                      className="w-full px-4 py-2 hover:bg-red-900/20 text-red-400 flex items-center gap-2 text-sm disabled:opacity-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(dataset.id);
+                      }}
+                      disabled={deleteDataset.isPending}
+                      className="w-full px-4 py-2 hover:bg-red-900/20 text-red-400 flex items-center gap-2 text-sm text-left disabled:opacity-50"
                     >
-                      {bulkDelete.isPending ? (
+                      {deleteDataset.isPending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}
                       Delete
                     </button>
-                  </div>
-                )}
-              </div>
-            )}
-            <button
-              onClick={() => setShowNewDatasetModal(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isDatasetLimitReached}
-              title={isDatasetLimitReached ? "Upgrade to Pro for unlimited datasets" : ""}
-            >
-              <Plus className="w-4 h-4" />
-              New Dataset
-            </button>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="flex flex-col gap-3">
-          {/* Status Filters */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 uppercase tracking-wide mr-2">Status:</span>
-            {statusFilterButtons.map(filter => (
-              <button
-                key={filter.id}
-                onClick={() => setStatusFilter(filter.id as any)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  filters.status === filter.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                {filter.icon && <span className="mr-1">{filter.icon}</span>}
-                {filter.label}
-              </button>
-            ))}
-          </div>
-
-          {/* View Type Filters + Search */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 uppercase tracking-wide mr-2">View:</span>
-              {viewTypeFilterButtons.map(filter => (
-                <button
-                  key={filter.id}
-                  onClick={() => setViewTypeFilter(filter.id as any)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    filters.viewType === filter.id
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                  }`}
-                >
-                  {filter.icon && <span className="mr-1">{filter.icon}</span>}
-                  {filter.label}
-                </button>
-              ))}
+                  </>
+                );
+              })()}
             </div>
-
-            {/* Selection Stats */}
-            {selectedCount > 0 && selectionStats.hasMixedTypes && (
-              <div className="px-3 py-1 bg-yellow-900/20 border border-yellow-800/30 rounded text-xs text-yellow-400">
-                Mixed: {selectionStats.gisCount} GIS, {selectionStats.threejsCount} 3D
-              </div>
-            )}
-
-            <div className="flex-1 max-w-md relative ml-auto">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input
-                type="text"
-                placeholder="Search by name or source..."
-                value={filters.search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#18181b] border border-gray-800 rounded text-sm focus:outline-none focus:border-blue-500"
-              />
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
-
-      {/* Table Zone */}
-      <div className="bg-[#0a0a0a] border border-gray-800 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto overflow-y-visible">
-          <table className="w-full">
-            <thead className="bg-[#18181b] sticky top-0 z-10">
-              <tr className="border-b border-gray-800">
-                <th className="px-4 py-3 text-left w-12">
-                  <input
-                    type="checkbox"
-                    className="rounded bg-gray-800 border-gray-700"
-                    onChange={(e) => toggleAll(filteredDatasets.map(ds => ds.id))}
-                    checked={isAllSelected}
-                    ref={(el) => {
-                      if (el) el.indeterminate = isSomeSelected && !isAllSelected;
-                    }}
-                  />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-24">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">
-                  View
-                </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
-                  onClick={() => setSorting('name')}
-                >
-                  Name {filters.sortBy === 'name' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
-                  onClick={() => setSorting('dataPoints')}
-                >
-                  Data Points {filters.sortBy === 'dataPoints' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
-                  onClick={() => setSorting('lastUpdated')}
-                >
-                  Last Updated {filters.sortBy === 'lastUpdated' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-300"
-                  onClick={() => setSorting('health')}
-                >
-                  Health {filters.sortBy === 'health' && (filters.sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider w-20">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800/50 relative">
-              {isEmpty ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Database className="w-12 h-12 text-gray-600" />
-                      <p className="text-gray-400">No datasets found</p>
-                      {activeFiltersCount > 0 && (
-                        <button
-                          onClick={clearFilters}
-                          className="text-sm text-blue-500 hover:text-blue-400"
-                        >
-                          Clear filters
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredDatasets.map((dataset, idx) => (
-                  <tr
-                    key={dataset.id}
-                    className={`${
-                      idx % 2 === 0 ? 'bg-[#0a0a0a]' : 'bg-[#18181b]'
-                    } hover:bg-gray-800/50 transition-colors cursor-pointer group ${
-                      isRowDisabled(dataset) ? 'opacity-50' : ''
-                    }`}
-                    onClick={(e) => handleRowClick(e, dataset.id)}
-                  >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={isRowSelected(dataset.id)}
-                        onChange={() => toggleRow(dataset.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        disabled={isRowDisabled(dataset)}
-                        className="rounded bg-gray-800 border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${statusConfig[dataset.status].color} ${
-                          dataset.status === 'active' ? 'animate-pulse shadow-lg ' + statusConfig[dataset.status].glow : ''
-                        }`}></div>
-                        <span className="text-sm text-gray-400">{statusConfig[dataset.status].label}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base">{getViewTypeIcon(dataset.viewType)}</span>
-                        <span className="text-xs text-gray-500">{getViewTypeLabel(dataset.viewType)}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-gray-100">{dataset.name}</span>
-                        <span className="text-xs text-gray-500 font-mono">{dataset.source}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col font-mono">
-                        <span className="text-gray-100">{dataset.totalDataPoints.toLocaleString()}</span>
-                        <div className="flex items-center gap-1 text-xs">
-                          <span className="text-gray-500">{dataset.dataPointsToday.toLocaleString()} today</span>
-                          {dataset.trend === 'up' && (
-                            <span className="flex items-center text-green-500">
-                              <TrendingUp className="w-3 h-3" />
-                              {dataset.trendPercent}%
-                            </span>
-                          )}
-                          {dataset.trend === 'down' && (
-                            <span className="flex items-center text-red-500">
-                              <TrendingDown className="w-3 h-3" />
-                              {Math.abs(dataset.trendPercent || 0)}%
-                            </span>
-                          )}
-                          {dataset.trend === 'neutral' && (
-                            <span className="flex items-center text-gray-500">
-                              <Minus className="w-3 h-3" />
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-mono text-gray-400">
-                        {formatLastUpdated(dataset.lastDataReceived ? new Date(dataset.lastDataReceived) : undefined)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${getHealthColor(dataset.health)} transition-all`}
-                            style={{ width: `${dataset.health || 0}%` }}
-                          ></div>
-                        </div>
-                        <span className={`text-xs font-mono font-semibold ${
-                          (dataset.health || 0) >= 95 ? 'text-green-500' : 
-                          (dataset.health || 0) >= 80 ? 'text-yellow-500' : 'text-red-500'
-                        }`}>
-                          {(dataset.health || 0).toFixed(1)}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end">
-                        <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setDropdownPosition({
-                                top: rect.bottom + window.scrollY,
-                                left: rect.right - 224,
-                              });
-                              setOpenDropdown(openDropdown === dataset.id ? null : dataset.id);
-                            }}
-                            className="p-1 hover:bg-gray-700 rounded transition-all text-gray-400 hover:text-gray-100"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                        </button>                   
-                      </div>                      
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="px-4 py-3 bg-[#18181b] border-t border-gray-800 flex items-center justify-between text-sm">
-          <span className="text-gray-400 font-mono">
-            Showing 1-{filteredDatasets.length} of {datasets.length}
-          </span>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded disabled:opacity-50" disabled>
-              Previous
-            </button>
-            <button className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded disabled:opacity-50" disabled>
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
+    </div>
+    
 
 
-      {/* Dropdown renderizado fuera de la tabla */}
-      {openDropdown !== null && dropdownPosition && (
-        <>
-          <div 
-            className="fixed inset-0 z-40"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpenDropdown(null);
-            }}
-          />
-          <div 
-            className="fixed w-56 bg-[#18181b] border border-gray-800 rounded-lg shadow-2xl z-50"
-            style={{
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-            }}
-          >
-            {(() => {
-              const dataset = filteredDatasets.find(ds => ds.id === openDropdown);
-              if (!dataset) return null;
-              return (
-                <>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/datasets/${dataset.id}`);
-                    }}
-                    className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left"
-                  >
-                    <ExternalLink className="w-4 h-4" /> View Details
-                  </button>
-                  <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
-                    <Play className="w-4 h-4" /> Run AI Analysis
-                  </button>
-                  <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
-                    <Download className="w-4 h-4" /> Export Data
-                  </button>
-                  <button className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left">
-                    <Bell className="w-4 h-4" /> Configure Alerts
-                  </button>
-                  <div className="border-t border-gray-800 my-1"></div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleArchive(dataset.id);
-                    }}
-                    disabled={archiveDataset.isPending}
-                    className="w-full px-4 py-2 hover:bg-gray-800 flex items-center gap-2 text-sm text-left disabled:opacity-50"
-                  >
-                    {archiveDataset.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Archive className="w-4 h-4" />
-                    )}
-                    Archive
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(dataset.id);
-                    }}
-                    disabled={deleteDataset.isPending}
-                    className="w-full px-4 py-2 hover:bg-red-900/20 text-red-400 flex items-center gap-2 text-sm text-left disabled:opacity-50"
-                  >
-                    {deleteDataset.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                    Delete
-                  </button>
-                </>
-              );
-            })()}
-          </div>
-        </>
-      )}
 
 
 
@@ -813,7 +639,7 @@ const DatasetManagement: React.FC = () => {
 
             {/* Tabs */}
             <div className="flex border-b border-gray-800 px-6">
-              {tabConfigs.map(tab => (
+              {TAB_CONFIGS.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setSelectedTab(tab.id)}
