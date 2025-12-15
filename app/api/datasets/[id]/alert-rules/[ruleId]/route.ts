@@ -45,10 +45,11 @@ const updateAlertRuleSchema = z.object({
 // GET - Obtener una alert rule específica
 // ============================================
 
-export async function GET(
+export async function GET(  
   req: NextRequest,
-  { params }: { params: { id: string; ruleId: string } }
+  { params }: { params: Promise<{ id: string; ruleId: string }> }
 ) {
+  const { id: datasetId, ruleId } = await params;
   try {
     const { userId } = await auth();
     
@@ -57,10 +58,7 @@ export async function GET(
         { error: 'Unauthorized' },
         { status: 401 }
       );
-    }
-
-    const { id: datasetId, ruleId } = params;
-
+    } 
     // Verificar que el dataset existe y pertenece al usuario
     const dataset = await prisma.dataset.findFirst({
       where: {
@@ -118,8 +116,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; ruleId: string } }
+  { params }: { params: Promise<{ id: string; ruleId: string }> }
 ) {
+  const { id: datasetId, ruleId } = await params;
   try {
     const { userId } = await auth();
     
@@ -129,8 +128,6 @@ export async function PATCH(
         { status: 401 }
       );
     }
-
-    const { id: datasetId, ruleId } = params;
 
     // Verificar que el dataset existe y pertenece al usuario
     const dataset = await prisma.dataset.findFirst({
@@ -240,8 +237,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string; ruleId: string } }
+  { params }: { params: Promise<{ id: string; ruleId: string }> }
 ) {
+  const { id: datasetId, ruleId } = await params;
   try {
     const { userId } = await auth();
     
@@ -251,8 +249,6 @@ export async function DELETE(
         { status: 401 }
       );
     }
-
-    const { id: datasetId, ruleId } = params;
 
     // Verificar que el dataset existe y pertenece al usuario
     const dataset = await prisma.dataset.findFirst({

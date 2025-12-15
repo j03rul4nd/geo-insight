@@ -47,8 +47,9 @@ const alertRuleSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: datasetId } = await params;
   try {
     const { userId } = await auth();
     
@@ -58,8 +59,6 @@ export async function GET(
         { status: 401 }
       );
     }
-
-    const datasetId = params.id;
 
     // Verificar que el dataset existe y pertenece al usuario
     const dataset = await prisma.dataset.findFirst({
@@ -113,8 +112,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: datasetId } = await params;
   try {
     const { userId } = await auth();
     
@@ -124,8 +124,6 @@ export async function POST(
         { status: 401 }
       );
     }
-
-    const datasetId = params.id;
 
     // Verificar que el dataset existe y pertenece al usuario
     const dataset = await prisma.dataset.findFirst({

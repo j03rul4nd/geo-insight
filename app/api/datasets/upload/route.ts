@@ -400,19 +400,30 @@ async function insertDataPointsInBatches(
   for (let i = 0; i < totalBatches; i++) {
     const batch = data.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
     
-    const dataPointsToCreate = batch.map(point => ({
-      datasetId,
-      x: point.x,
-      y: point.y,
-      z: point.z,
-      value: point.value,
-      sensorId: point.sensorId,
-      sensorType: point.sensorType,
-      unit: point.unit,
-      metadata: point.metadata,
-      timestamp: point.timestamp ? new Date(point.timestamp) : new Date(),
-      createdAt: new Date()
-    }));
+    const dataPointsToCreate = batch.map((point, index) => {
+      // Generate sensorId if not provided - TypeScript knows this is always a string
+      const sensorId: string = point.sensorId || `sensor-${datasetId.slice(-8)}-${i * BATCH_SIZE + index}`;
+      
+      // Build metadata object, ensuring it's always defined
+      const metadata: Record<string, any> = {
+        ...(point.metadata || {}),
+        // Store original fields that don't have dedicated columns
+        ...(point.sensorType && { sensorType: point.sensorType }),
+        ...(point.unit && { unit: point.unit })
+      };
+      
+      return {
+        datasetId,
+        x: point.x,
+        y: point.y,
+        z: point.z ?? null,
+        value: point.value,
+        sensorId,
+        metadata,
+        timestamp: point.timestamp ? new Date(point.timestamp) : new Date(),
+        createdAt: new Date()
+      };
+    });
 
     await prisma.dataPoint.createMany({
       data: dataPointsToCreate,
