@@ -12,6 +12,7 @@ import {
   LANGUAGE_CHANGE_EVENT,
   getNavTranslation,
   getEarlyAccessCTATranslation,
+  getPricingTranslation,
   getHeroTranslation,
   getFooterTranslation,
   getRealTwinWhyItMattersTranslation,
@@ -197,6 +198,17 @@ export const useInvoiceGeneratorTranslation = () => {
     isClient
   };
 };
+
+export const usePricingTranslation = () => {
+  const { language, changeLanguage, isClient } = useLanguage();
+
+  return {
+    t: getPricingTranslation(language),
+    language,
+    changeLanguage,
+    isClient
+  };
+}
 
 // ✅ NUEVO: Hook específico para traducciones del PromptUsageDisplay
 export const usePromptUsageTranslation = () => {

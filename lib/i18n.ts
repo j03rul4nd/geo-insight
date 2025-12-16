@@ -4302,6 +4302,406 @@ export const headerTermsTranslations: Record<Language, {
   }
 };
 
+export const pricingTranslations: Record<Language, {
+  // Badge
+  badgeText: string;
+  
+  // Title Section
+  mainTitle: string;
+  subtitle: string;
+  
+  // Header
+  tierLabel: string;
+  activeLabel: string;
+  
+  // Pricing
+  price: string;
+  paymentInfo: string;
+  
+  // Key Metrics
+  activeDatasetsLabel: string;
+  activeDatasetsValue: string;
+  activeDatasetsDesc: string;
+  dataPointsLabel: string;
+  dataPointsValue: string;
+  dataPointsDesc: string;
+  aiInsightsLabel: string;
+  aiInsightsValue: string;
+  aiInsightsDesc: string;
+  
+  // Core Features
+  feature1Title: string;
+  feature1Desc: string;
+  feature2Title: string;
+  feature2Desc: string;
+  feature3Title: string;
+  feature3Desc: string;
+  feature4Title: string;
+  feature4Desc: string;
+  
+  // CTA Buttons
+  manageSubscription: string;
+  getBetaAccess: string;
+  signInToContinue: string;
+  
+  // Warning
+  betaWarning: string;
+  
+  // Expandable Section
+  viewAllFeatures: string;
+  hideAdditionalFeatures: string;
+  
+  // Immediate Access
+  immediateAccessTitle: string;
+  immediateFeature1: string;
+  immediateFeature2: string;
+  immediateFeature3: string;
+  immediateFeature4: string;
+  
+  // Founder Perks
+  founderPerksTitle: string;
+  perk1Label: string;
+  perk1Title: string;
+  perk1Desc: string;
+  perk2Label: string;
+  perk2Title: string;
+  perk2Desc: string;
+  
+  // Post Launch
+  postLaunchTitle: string;
+  postLaunch1Title: string;
+  postLaunch1Desc: string;
+  postLaunch2Title: string;
+  postLaunch2Desc: string;
+  postLaunch3Title: string;
+  postLaunch3Desc: string;
+  
+  // Legal
+  legalText: string;
+  
+  // Back button
+  backToHome: string;
+}> = {
+  en: {
+    badgeText: "Now in Beta · Early Access",
+    mainTitle: "Join the Beta as a Founder",
+    subtitle: "Get early access and shape the future of IoT analytics",
+    tierLabel: "Founder Tier",
+    activeLabel: "Active",
+    price: "€29",
+    paymentInfo: "One-time payment · Access throughout beta",
+    activeDatasetsLabel: "Active Datasets",
+    activeDatasetsValue: "2 datasets",
+    activeDatasetsDesc: "With source mixing",
+    dataPointsLabel: "Data Points",
+    dataPointsValue: "1,000",
+    dataPointsDesc: "Per dataset",
+    aiInsightsLabel: "AI Insights",
+    aiInsightsValue: "5/month",
+    aiInsightsDesc: "Pattern analysis",
+    feature1Title: "Connect 2 MQTT brokers simultaneously",
+    feature1Desc: "Multi-cloud topology with encrypted credentials",
+    feature2Title: "Custom geospatial layers",
+    feature2Desc: "Markers, trails, and dynamic visualization rules",
+    feature3Title: "Smart alerts with Slack and email integration",
+    feature3Desc: "Configurable thresholds and real-time notifications",
+    feature4Title: "Configurable metrics with advanced visualizations",
+    feature4Desc: "Line, area, bar, scatter, gauge, and distribution charts",
+    manageSubscription: "Manage Subscription",
+    getBetaAccess: "Get Beta Access — €29",
+    signInToContinue: "Sign In to Continue",
+    betaWarning: "Beta software — Not recommended for production use",
+    viewAllFeatures: "View all features",
+    hideAdditionalFeatures: "Hide additional features",
+    immediateAccessTitle: "Immediate Access",
+    immediateFeature1: "Dataset mixing for multi-source analytics",
+    immediateFeature2: "Shareable GIS dashboards for team collaboration",
+    immediateFeature3: "MCP server integration with external tools",
+    immediateFeature4: "AI-powered pattern analysis and insights",
+    founderPerksTitle: "Founder Perks",
+    perk1Label: "🎯 Direct Input",
+    perk1Title: "Shape the roadmap",
+    perk1Desc: "Direct line to the development team",
+    perk2Label: "🚀 First Access",
+    perk2Title: "Features before launch",
+    perk2Desc: "Test new capabilities first",
+    postLaunchTitle: "After Public Launch",
+    postLaunch1Title: "🎁 1 Month Free",
+    postLaunch1Desc: "Pro plan at launch",
+    postLaunch2Title: "💰 20% Off",
+    postLaunch2Desc: "First year discount",
+    postLaunch3Title: "🔓 No Lock-In",
+    postLaunch3Desc: "Cancel anytime",
+    legalText: "By continuing, you agree to our Terms of Service and Privacy Policy. Secure one-time payment processed by Stripe.",
+    backToHome: "← Back to Home"
+  },
+  es: {
+    badgeText: "🚀 Desarrollo Activo · Early Access",
+    mainTitle: "Early Access Beta - Founder Tier",
+    subtitle: "Apoya el desarrollo y obtén acceso anticipado + beneficios permanentes",
+    tierLabel: "Beta Access",
+    activeLabel: "Active",
+    price: "29€",
+    paymentInfo: "Pago único · Acceso durante toda la beta",
+    activeDatasetsLabel: "Datasets Activos",
+    activeDatasetsValue: "2 datasets",
+    activeDatasetsDesc: "Con mixing de fuentes",
+    dataPointsLabel: "Data Points",
+    dataPointsValue: "1,000",
+    dataPointsDesc: "",
+    aiInsightsLabel: "AI Insights",
+    aiInsightsValue: "5/mes",
+    aiInsightsDesc: "Pattern analysis",
+    feature1Title: "Conexión a 2 brokers MQTT simultáneos",
+    feature1Desc: "Topología multi-cloud con credenciales encriptadas",
+    feature2Title: "Layers geoespaciales personalizadas",
+    feature2Desc: "Markers, trails y reglas de visualización dinámica",
+    feature3Title: "Sistema de alertas con integración Slack + Email",
+    feature3Desc: "Umbrales configurables y notificaciones en tiempo real",
+    feature4Title: "Métricas configurables con visualizaciones avanzadas",
+    feature4Desc: "Line, area, bar, scatter, gauge y distribución",
+    manageSubscription: "Manage Subscription",
+    getBetaAccess: "Obtener Acceso Beta - 29€",
+    signInToContinue: "Inicia Sesión para Acceder",
+    betaWarning: "⚠️ Servicio experimental en desarrollo · No usar para sistemas críticos",
+    viewAllFeatures: "Ver todas las características",
+    hideAdditionalFeatures: "Ocultar características adicionales",
+    immediateAccessTitle: "Durante la Beta (Acceso Inmediato)",
+    immediateFeature1: "Mixing de datasets - Combina múltiples fuentes de datos",
+    immediateFeature2: "Dashboards GIS compartibles con tu equipo",
+    immediateFeature3: "MCP Server integration - Conecta con herramientas externas",
+    immediateFeature4: "AI Pattern Analysis - Consultas inteligentes sobre patrones",
+    founderPerksTitle: "Beneficios Exclusivos de Founder",
+    perk1Label: "🎯 Feedback Directo",
+    perk1Title: "Influye en el roadmap",
+    perk1Desc: "Comunicación directa con el desarrollador",
+    perk2Label: "🚀 Early Access",
+    perk2Title: "Nuevas features primero",
+    perk2Desc: "Antes del lanzamiento público",
+    postLaunchTitle: "Post-Lanzamiento Oficial",
+    postLaunch1Title: "🎁 1 mes GRATIS",
+    postLaunch1Desc: "Del plan Pro al lanzar",
+    postLaunch2Title: "💰 20% descuento",
+    postLaunch2Desc: "Durante el primer año",
+    postLaunch3Title: "🔓 Sin compromiso",
+    postLaunch3Desc: "Cancela cuando quieras",
+    legalText: "Al proceder, aceptas los Términos de Servicio y Política de Privacidad. Pago único procesado de forma segura por Stripe.",
+    backToHome: "← Back to Home"
+  },
+  pt: {
+    badgeText: "🚀 Em Desenvolvimento · Acesso Antecipado",
+    mainTitle: "Junte-se à Beta como Fundador",
+    subtitle: "Obtenha acesso antecipado e molde o futuro da análise IoT",
+    tierLabel: "Nível Fundador",
+    activeLabel: "Ativo",
+    price: "€29",
+    paymentInfo: "Pagamento único · Acesso durante toda a beta",
+    activeDatasetsLabel: "Datasets Ativos",
+    activeDatasetsValue: "2 datasets",
+    activeDatasetsDesc: "Com mistura de fontes",
+    dataPointsLabel: "Pontos de Dados",
+    dataPointsValue: "1.000",
+    dataPointsDesc: "Por dataset",
+    aiInsightsLabel: "Insights de IA",
+    aiInsightsValue: "5/mês",
+    aiInsightsDesc: "Análise de padrões",
+    feature1Title: "Conecte 2 brokers MQTT simultaneamente",
+    feature1Desc: "Topologia multi-cloud com credenciais criptografadas",
+    feature2Title: "Camadas geoespaciais personalizadas",
+    feature2Desc: "Marcadores, trilhas e regras de visualização dinâmica",
+    feature3Title: "Alertas inteligentes com integração Slack e email",
+    feature3Desc: "Limites configuráveis e notificações em tempo real",
+    feature4Title: "Métricas configuráveis com visualizações avançadas",
+    feature4Desc: "Gráficos de linha, área, barra, dispersão, medidor e distribuição",
+    manageSubscription: "Gerenciar Assinatura",
+    getBetaAccess: "Obter Acesso Beta — €29",
+    signInToContinue: "Entrar para Continuar",
+    betaWarning: "Software beta — Não recomendado para uso em produção",
+    viewAllFeatures: "Ver todas as funcionalidades",
+    hideAdditionalFeatures: "Ocultar funcionalidades adicionais",
+    immediateAccessTitle: "Acesso Imediato",
+    immediateFeature1: "Mistura de datasets para análise multi-fonte",
+    immediateFeature2: "Dashboards GIS compartilháveis para colaboração em equipe",
+    immediateFeature3: "Integração de servidor MCP com ferramentas externas",
+    immediateFeature4: "Análise de padrões e insights com IA",
+    founderPerksTitle: "Benefícios Exclusivos de Fundador",
+    perk1Label: "🎯 Feedback Direto",
+    perk1Title: "Molde o roadmap",
+    perk1Desc: "Linha direta com a equipe de desenvolvimento",
+    perk2Label: "🚀 Acesso Antecipado",
+    perk2Title: "Recursos antes do lançamento",
+    perk2Desc: "Teste novas capacidades primeiro",
+    postLaunchTitle: "Após o Lançamento Público",
+    postLaunch1Title: "🎁 1 Mês Grátis",
+    postLaunch1Desc: "Plano Pro no lançamento",
+    postLaunch2Title: "💰 20% de Desconto",
+    postLaunch2Desc: "Desconto no primeiro ano",
+    postLaunch3Title: "🔓 Sem Compromisso",
+    postLaunch3Desc: "Cancele a qualquer momento",
+    legalText: "Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade. Pagamento único seguro processado pela Stripe.",
+    backToHome: "← Voltar ao Início"
+  },
+  ja: {
+    badgeText: "🚀 ベータ版公開中 · 早期アクセス",
+    mainTitle: "ファウンダーとしてベータ版に参加",
+    subtitle: "早期アクセスを取得し、IoT分析の未来を形作る",
+    tierLabel: "ファウンダー層",
+    activeLabel: "有効",
+    price: "€29",
+    paymentInfo: "一回払い · ベータ期間中アクセス可能",
+    activeDatasetsLabel: "アクティブデータセット",
+    activeDatasetsValue: "2データセット",
+    activeDatasetsDesc: "ソースミキシング付き",
+    dataPointsLabel: "データポイント",
+    dataPointsValue: "1,000",
+    dataPointsDesc: "データセットあたり",
+    aiInsightsLabel: "AIインサイト",
+    aiInsightsValue: "5/月",
+    aiInsightsDesc: "パターン分析",
+    feature1Title: "2つのMQTTブローカーに同時接続",
+    feature1Desc: "暗号化された認証情報を使用したマルチクラウドトポロジー",
+    feature2Title: "カスタム地理空間レイヤー",
+    feature2Desc: "マーカー、トレイル、動的な可視化ルール",
+    feature3Title: "SlackとEメール統合によるスマートアラート",
+    feature3Desc: "設定可能なしきい値とリアルタイム通知",
+    feature4Title: "高度な可視化による設定可能なメトリクス",
+    feature4Desc: "折れ線、面、棒、散布図、ゲージ、分布チャート",
+    manageSubscription: "サブスクリプション管理",
+    getBetaAccess: "ベータアクセスを取得 — €29",
+    signInToContinue: "続行するにはサインイン",
+    betaWarning: "ベータソフトウェア — 本番環境での使用は推奨されません",
+    viewAllFeatures: "すべての機能を表示",
+    hideAdditionalFeatures: "追加機能を非表示",
+    immediateAccessTitle: "即時アクセス",
+    immediateFeature1: "マルチソース分析のためのデータセットミキシング",
+    immediateFeature2: "チームコラボレーション用の共有可能なGISダッシュボード",
+    immediateFeature3: "外部ツールとのMCPサーバー統合",
+    immediateFeature4: "AI駆動のパターン分析とインサイト",
+    founderPerksTitle: "ファウンダー特典",
+    perk1Label: "🎯 直接的な意見",
+    perk1Title: "ロードマップを形作る",
+    perk1Desc: "開発チームへの直接連絡",
+    perk2Label: "🚀 最初のアクセス",
+    perk2Title: "ローンチ前の機能",
+    perk2Desc: "新機能を最初にテスト",
+    postLaunchTitle: "公開後",
+    postLaunch1Title: "🎁 1ヶ月無料",
+    postLaunch1Desc: "ローンチ時のProプラン",
+    postLaunch2Title: "💰 20%オフ",
+    postLaunch2Desc: "初年度割引",
+    postLaunch3Title: "🔓 縛りなし",
+    postLaunch3Desc: "いつでもキャンセル可能",
+    legalText: "続行することにより、利用規約とプライバシーポリシーに同意したものとみなされます。Stripeによる安全な一回払い処理。",
+    backToHome: "← ホームに戻る"
+  },
+  fr: {
+    badgeText: "🚀 En Bêta · Accès Anticipé",
+    mainTitle: "Rejoignez la Bêta en tant que Fondateur",
+    subtitle: "Obtenez un accès anticipé et façonnez l'avenir de l'analyse IoT",
+    tierLabel: "Niveau Fondateur",
+    activeLabel: "Actif",
+    price: "29€",
+    paymentInfo: "Paiement unique · Accès pendant toute la bêta",
+    activeDatasetsLabel: "Datasets Actifs",
+    activeDatasetsValue: "2 datasets",
+    activeDatasetsDesc: "Avec mélange de sources",
+    dataPointsLabel: "Points de Données",
+    dataPointsValue: "1 000",
+    dataPointsDesc: "Par dataset",
+    aiInsightsLabel: "Insights IA",
+    aiInsightsValue: "5/mois",
+    aiInsightsDesc: "Analyse de motifs",
+    feature1Title: "Connectez 2 brokers MQTT simultanément",
+    feature1Desc: "Topologie multi-cloud avec identifiants chiffrés",
+    feature2Title: "Couches géospatiales personnalisées",
+    feature2Desc: "Marqueurs, pistes et règles de visualisation dynamique",
+    feature3Title: "Alertes intelligentes avec intégration Slack et email",
+    feature3Desc: "Seuils configurables et notifications en temps réel",
+    feature4Title: "Métriques configurables avec visualisations avancées",
+    feature4Desc: "Graphiques en ligne, zone, barre, nuage, jauge et distribution",
+    manageSubscription: "Gérer l'Abonnement",
+    getBetaAccess: "Obtenir l'Accès Bêta — 29€",
+    signInToContinue: "Se Connecter pour Continuer",
+    betaWarning: "Logiciel bêta — Non recommandé pour un usage en production",
+    viewAllFeatures: "Voir toutes les fonctionnalités",
+    hideAdditionalFeatures: "Masquer les fonctionnalités supplémentaires",
+    immediateAccessTitle: "Accès Immédiat",
+    immediateFeature1: "Mélange de datasets pour l'analyse multi-sources",
+    immediateFeature2: "Tableaux de bord GIS partageables pour la collaboration d'équipe",
+    immediateFeature3: "Intégration serveur MCP avec outils externes",
+    immediateFeature4: "Analyse de motifs et insights alimentés par l'IA",
+    founderPerksTitle: "Avantages Fondateurs",
+    perk1Label: "🎯 Contribution Directe",
+    perk1Title: "Façonnez la feuille de route",
+    perk1Desc: "Ligne directe avec l'équipe de développement",
+    perk2Label: "🚀 Premier Accès",
+    perk2Title: "Fonctionnalités avant le lancement",
+    perk2Desc: "Testez les nouvelles capacités en premier",
+    postLaunchTitle: "Après le Lancement Public",
+    postLaunch1Title: "🎁 1 Mois Gratuit",
+    postLaunch1Desc: "Plan Pro au lancement",
+    postLaunch2Title: "💰 20% de Réduction",
+    postLaunch2Desc: "Réduction première année",
+    postLaunch3Title: "🔓 Sans Engagement",
+    postLaunch3Desc: "Annulez à tout moment",
+    legalText: "En continuant, vous acceptez nos Conditions de Service et notre Politique de Confidentialité. Paiement unique sécurisé traité par Stripe.",
+    backToHome: "← Retour à l'Accueil"
+  },
+  de: {
+    badgeText: "🚀 In Beta · Früher Zugang",
+    mainTitle: "Treten Sie der Beta als Gründer bei",
+    subtitle: "Erhalten Sie frühen Zugang und gestalten Sie die Zukunft der IoT-Analytik",
+    tierLabel: "Gründer-Stufe",
+    activeLabel: "Aktiv",
+    price: "29€",
+    paymentInfo: "Einmalige Zahlung · Zugang während der gesamten Beta",
+    activeDatasetsLabel: "Aktive Datasets",
+    activeDatasetsValue: "2 Datasets",
+    activeDatasetsDesc: "Mit Quellenmischung",
+    dataPointsLabel: "Datenpunkte",
+    dataPointsValue: "1.000",
+    dataPointsDesc: "Pro Dataset",
+    aiInsightsLabel: "KI-Einblicke",
+    aiInsightsValue: "5/Monat",
+    aiInsightsDesc: "Musteranalyse",
+    feature1Title: "Verbinden Sie 2 MQTT-Broker gleichzeitig",
+    feature1Desc: "Multi-Cloud-Topologie mit verschlüsselten Zugangsdaten",
+    feature2Title: "Benutzerdefinierte geospatiale Ebenen",
+    feature2Desc: "Markierungen, Pfade und dynamische Visualisierungsregeln",
+    feature3Title: "Intelligente Warnungen mit Slack- und E-Mail-Integration",
+    feature3Desc: "Konfigurierbare Schwellenwerte und Echtzeit-Benachrichtigungen",
+    feature4Title: "Konfigurierbare Metriken mit erweiterten Visualisierungen",
+    feature4Desc: "Linien-, Flächen-, Balken-, Streu-, Messgeräte- und Verteilungsdiagramme",
+    manageSubscription: "Abonnement Verwalten",
+    getBetaAccess: "Beta-Zugang Erhalten — 29€",
+    signInToContinue: "Anmelden um Fortzufahren",
+    betaWarning: "Beta-Software — Nicht für den Produktionseinsatz empfohlen",
+    viewAllFeatures: "Alle Funktionen anzeigen",
+    hideAdditionalFeatures: "Zusätzliche Funktionen ausblenden",
+    immediateAccessTitle: "Sofortiger Zugang",
+    immediateFeature1: "Dataset-Mischung für Multi-Quellen-Analytik",
+    immediateFeature2: "Teilbare GIS-Dashboards für Teamzusammenarbeit",
+    immediateFeature3: "MCP-Server-Integration mit externen Tools",
+    immediateFeature4: "KI-gestützte Musteranalyse und Einblicke",
+    founderPerksTitle: "Gründer-Vorteile",
+    perk1Label: "🎯 Direkter Einfluss",
+    perk1Title: "Roadmap mitgestalten",
+    perk1Desc: "Direkte Verbindung zum Entwicklungsteam",
+    perk2Label: "🚀 Erster Zugang",
+    perk2Title: "Funktionen vor dem Start",
+    perk2Desc: "Neue Funktionen zuerst testen",
+    postLaunchTitle: "Nach dem öffentlichen Start",
+    postLaunch1Title: "🎁 1 Monat Gratis",
+    postLaunch1Desc: "Pro-Plan beim Start",
+    postLaunch2Title: "💰 20% Rabatt",
+    postLaunch2Desc: "Erstes Jahr Rabatt",
+    postLaunch3Title: "🔓 Keine Bindung",
+    postLaunch3Desc: "Jederzeit kündbar",
+    legalText: "Durch Fortfahren stimmen Sie unseren Nutzungsbedingungen und Datenschutzrichtlinien zu. Sichere Einmalzahlung über Stripe.",
+    backToHome: "← Zurück zur Startseite"
+  }
+};
+
 
 export const headerTermsPrivacyTranslations: Record<Language, {
   title: string;
@@ -4874,512 +5274,7 @@ export const setStoredLanguage = (language: Language): void => {
   localStorage.setItem('preferred-language', language);
 };
 
-// Traducciones para la página de pricing
-export const pricingTranslations: Record<Language, {
-  title: string;
-  back: string;
-  popularBadge: string;
-  activeBadge: string;
-  plan: {
-    title: string;
-    subtitle: string;
-    price: string;
-    period: string;
-    mainFeatures: {
-      invoicesTitle: string;
-      invoicesSubtitle: string;
-      promptsTitle: string;
-      promptsSubtitle: string;
-      earlyAccessTitle: string;
-      earlyAccessSubtitle: string;
-    };
-    button: {
-      subscribe: string;
-      manageSubscription: string;
-      signInToSubscribe: string;
-    };
-    securityText: string;
-    toggleDetails: {
-      show: string;
-      hide: string;
-    };
-    extendedStorage: {
-      title: string;
-      description: string;
-      subtitle: string;
-    };
-    premiumFeatures: {
-      title: string;
-      emailSend: {
-        title: string;
-        subtitle: string;
-      };
-      prioritySupport: {
-        title: string;
-        subtitle: string;
-      };
-    };
-    comingSoon: {
-      title: string;
-      qrTemplates: {
-        title: string;
-        subtitle: string;
-      };
-      stripePayment: {
-        title: string;
-        subtitle: string;
-      };
-    };
-    betaAccess: {
-      title: string;
-      api: {
-        title: string;
-        subtitle: string;
-      };
-      betaTesting: {
-        title: string;
-        subtitle: string;
-      };
-      exclusiveTemplates: {
-        title: string;
-        subtitle: string;
-      };
-    };
-  };
-}> = {
-  en: {
-    title: "Subscription Plan",
-    back: "Back",
-    popularBadge: "Most Popular Plan",
-    activeBadge: "Active",
-    plan: {
-      title: "Invoice Generator Pro",
-      subtitle: "Complete plan for professionals and small businesses",
-      price: "$19.99",
-      period: "/month",
-      mainFeatures: {
-        invoicesTitle: "100 invoices per month",
-        invoicesSubtitle: "vs 5 in free plan - 20x more capacity",
-        promptsTitle: "100 AI prompts per month", 
-        promptsSubtitle: "vs 10 in free plan - Total automation",
-        earlyAccessTitle: "Early Access",
-        earlyAccessSubtitle: "New features before anyone else"
-      },
-      button: {
-        subscribe: "🚀 Upgrade to Pro - $19.99/month",
-        manageSubscription: "Manage Subscription",
-        signInToSubscribe: "Sign In to Subscribe"
-      },
-      securityText: "✅ Cancel anytime • 💳 Secure payment with Stripe",
-      toggleDetails: {
-        show: "See all benefits",
-        hide: "Hide details"
-      },
-      extendedStorage: {
-        title: "Extended Storage",
-        description: "2-year storage",
-        subtitle: "vs 30 days in free plan"
-      },
-      premiumFeatures: {
-        title: "Premium Features",
-        emailSend: {
-          title: "Email sending",
-          subtitle: "Share invoices directly"
-        },
-        prioritySupport: {
-          title: "Priority support",
-          subtitle: "24h response guaranteed"
-        }
-      },
-      comingSoon: {
-        title: "Coming Soon",
-        qrTemplates: {
-          title: "QR templates",
-          subtitle: "Automatic QR codes"
-        },
-        stripePayment: {
-          title: "Stripe payment button",
-          subtitle: "Integrated collections"
-        }
-      },
-      betaAccess: {
-        title: "Early Access Beta",
-        api: {
-          title: "MCP API",
-          subtitle: "Advanced automation"
-        },
-        betaTesting: {
-          title: "Beta testing",
-          subtitle: "Features first"
-        },
-        exclusiveTemplates: {
-          title: "Exclusive templates",
-          subtitle: "Unique designs"
-        }
-      }
-    }
-  },
-  es: {
-    title: "Plan de Suscripción",
-    back: "Atrás",
-    popularBadge: "Plan Más Popular",
-    activeBadge: "Activo",
-    plan: {
-      title: "Invoice Generator Pro",
-      subtitle: "Plan completo para profesionales y pequeños negocios",
-      price: "€19.99",
-      period: "/mes",
-      mainFeatures: {
-        invoicesTitle: "100 facturas por mes",
-        invoicesSubtitle: "vs 5 en plan gratuito - 20x más capacidad",
-        promptsTitle: "100 prompts de IA por mes",
-        promptsSubtitle: "vs 10 en plan gratuito - Automatización total",
-        earlyAccessTitle: "Acceso Anticipado",
-        earlyAccessSubtitle: "Nuevas funciones antes que nadie"
-      },
-      button: {
-        subscribe: "🚀 Actualizar a Pro - €19.99/mes",
-        manageSubscription: "Gestionar Suscripción",
-        signInToSubscribe: "Iniciar Sesión para Suscribirse"
-      },
-      securityText: "✅ Cancela cuando quieras • 💳 Pago seguro con Stripe",
-      toggleDetails: {
-        show: "Ver todos los beneficios",
-        hide: "Ocultar detalles"
-      },
-      extendedStorage: {
-        title: "Almacenamiento Extendido",
-        description: "Almacenamiento 2 años",
-        subtitle: "vs 30 días en plan gratuito"
-      },
-      premiumFeatures: {
-        title: "Características Premium",
-        emailSend: {
-          title: "Envío por email",
-          subtitle: "Comparte facturas directamente"
-        },
-        prioritySupport: {
-          title: "Soporte prioritario",
-          subtitle: "Respuesta en 24h garantizada"
-        }
-      },
-      comingSoon: {
-        title: "Próximamente Disponible",
-        qrTemplates: {
-          title: "Plantillas con QR",
-          subtitle: "Códigos QR automáticos"
-        },
-        stripePayment: {
-          title: "Botón de pago Stripe",
-          subtitle: "Cobros integrados"
-        }
-      },
-      betaAccess: {
-        title: "Acceso Anticipado Beta",
-        api: {
-          title: "API MCP",
-          subtitle: "Automatización avanzada"
-        },
-        betaTesting: {
-          title: "Beta testing",
-          subtitle: "Funciones primero"
-        },
-        exclusiveTemplates: {
-          title: "Plantillas exclusivas",
-          subtitle: "Diseños únicos"
-        }
-      }
-    }
-  },
-  pt: {
-    title: "Plano de Assinatura",
-    back: "Voltar",
-    popularBadge: "Plano Mais Popular",
-    activeBadge: "Ativo",
-    plan: {
-      title: "Invoice Generator Pro",
-      subtitle: "Plano completo para profissionais e pequenas empresas",
-      price: "$19.99",
-      period: "/mês",
-      mainFeatures: {
-        invoicesTitle: "100 faturas por mês",
-        invoicesSubtitle: "vs 5 no plano gratuito - 20x mais capacidade",
-        promptsTitle: "100 prompts de IA por mês",
-        promptsSubtitle: "vs 10 no plano gratuito - Automação total",
-        earlyAccessTitle: "Acesso Antecipado",
-        earlyAccessSubtitle: "Novos recursos antes de todos"
-      },
-      button: {
-        subscribe: "🚀 Atualizar para Pro - $19.99/mês",
-        manageSubscription: "Gerenciar Assinatura",
-        signInToSubscribe: "Entrar para Assinar"
-      },
-      securityText: "✅ Cancele a qualquer momento • 💳 Pagamento seguro com Stripe",
-      toggleDetails: {
-        show: "Ver todos os benefícios",
-        hide: "Ocultar detalhes"
-      },
-      extendedStorage: {
-        title: "Armazenamento Estendido",
-        description: "Armazenamento de 2 anos",
-        subtitle: "vs 30 dias no plano gratuito"
-      },
-      premiumFeatures: {
-        title: "Recursos Premium",
-        emailSend: {
-          title: "Envio por email",
-          subtitle: "Compartilhe faturas diretamente"
-        },
-        prioritySupport: {
-          title: "Suporte prioritário",
-          subtitle: "Resposta em 24h garantida"
-        }
-      },
-      comingSoon: {
-        title: "Em Breve",
-        qrTemplates: {
-          title: "Modelos com QR",
-          subtitle: "Códigos QR automáticos"
-        },
-        stripePayment: {
-          title: "Botão de pagamento Stripe",
-          subtitle: "Cobranças integradas"
-        }
-      },
-      betaAccess: {
-        title: "Acesso Beta Antecipado",
-        api: {
-          title: "API MCP",
-          subtitle: "Automação avançada"
-        },
-        betaTesting: {
-          title: "Testes beta",
-          subtitle: "Recursos primeiro"
-        },
-        exclusiveTemplates: {
-          title: "Modelos exclusivos",
-          subtitle: "Designs únicos"
-        }
-      }
-    }
-  },
-  ja: {
-    title: "サブスクリプションプラン",
-    back: "戻る",
-    popularBadge: "最も人気のプラン",
-    activeBadge: "アクティブ",
-    plan: {
-      title: "Invoice Generator Pro",
-      subtitle: "プロフェッショナルと小規模企業向けの完全プラン",
-      price: "$19.99",
-      period: "/月",
-      mainFeatures: {
-        invoicesTitle: "月100枚の請求書",
-        invoicesSubtitle: "無料プランの5枚と比較 - 20倍の容量",
-        promptsTitle: "月100回のAIプロンプト",
-        promptsSubtitle: "無料プランの10回と比較 - 完全自動化",
-        earlyAccessTitle: "早期アクセス",
-        earlyAccessSubtitle: "誰よりも先に新機能を"
-      },
-      button: {
-        subscribe: "🚀 Proにアップグレード - $19.99/月",
-        manageSubscription: "サブスクリプション管理",
-        signInToSubscribe: "ログインして登録"
-      },
-      securityText: "✅ いつでもキャンセル可能 • 💳 Stripeによる安全な支払い",
-      toggleDetails: {
-        show: "すべてのメリットを見る",
-        hide: "詳細を隠す"
-      },
-      extendedStorage: {
-        title: "拡張ストレージ",
-        description: "2年間のストレージ",
-        subtitle: "無料プランの30日と比較"
-      },
-      premiumFeatures: {
-        title: "プレミアム機能",
-        emailSend: {
-          title: "メール送信",
-          subtitle: "請求書を直接共有"
-        },
-        prioritySupport: {
-          title: "優先サポート",
-          subtitle: "24時間以内の回答を保証"
-        }
-      },
-      comingSoon: {
-        title: "近日公開",
-        qrTemplates: {
-          title: "QRテンプレート",
-          subtitle: "自動QRコード"
-        },
-        stripePayment: {
-          title: "Stripe支払いボタン",
-          subtitle: "統合された請求"
-        }
-      },
-      betaAccess: {
-        title: "早期アクセスベータ",
-        api: {
-          title: "MCP API",
-          subtitle: "高度な自動化"
-        },
-        betaTesting: {
-          title: "ベータテスト",
-          subtitle: "機能を最初に"
-        },
-        exclusiveTemplates: {
-          title: "限定テンプレート",
-          subtitle: "ユニークなデザイン"
-        }
-      }
-    }
-  },
-  fr: {
-    title: "Plan d'Abonnement",
-    back: "Retour",
-    popularBadge: "Plan le Plus Populaire",
-    activeBadge: "Actif",
-    plan: {
-      title: "Invoice Generator Pro",
-      subtitle: "Plan complet pour professionnels et petites entreprises",
-      price: "$19.99",
-      period: "/mois",
-      mainFeatures: {
-        invoicesTitle: "100 factures par mois",
-        invoicesSubtitle: "vs 5 dans le plan gratuit - 20x plus de capacité",
-        promptsTitle: "100 prompts IA par mois",
-        promptsSubtitle: "vs 10 dans le plan gratuit - Automatisation totale",
-        earlyAccessTitle: "Accès Anticipé",
-        earlyAccessSubtitle: "Nouvelles fonctionnalités en premier"
-      },
-      button: {
-        subscribe: "🚀 Passer à Pro - $19.99/mois",
-        manageSubscription: "Gérer l'Abonnement",
-        signInToSubscribe: "Se Connecter pour S'abonner"
-      },
-      securityText: "✅ Annulez quand vous voulez • 💳 Paiement sécurisé avec Stripe",
-      toggleDetails: {
-        show: "Voir tous les avantages",
-        hide: "Masquer les détails"
-      },
-      extendedStorage: {
-        title: "Stockage Étendu",
-        description: "Stockage 2 ans",
-        subtitle: "vs 30 jours dans le plan gratuit"
-      },
-      premiumFeatures: {
-        title: "Fonctionnalités Premium",
-        emailSend: {
-          title: "Envoi par email",
-          subtitle: "Partagez les factures directement"
-        },
-        prioritySupport: {
-          title: "Support prioritaire",
-          subtitle: "Réponse en 24h garantie"
-        }
-      },
-      comingSoon: {
-        title: "Bientôt Disponible",
-        qrTemplates: {
-          title: "Modèles avec QR",
-          subtitle: "Codes QR automatiques"
-        },
-        stripePayment: {
-          title: "Bouton de paiement Stripe",
-          subtitle: "Collections intégrées"
-        }
-      },
-      betaAccess: {
-        title: "Accès Bêta Anticipé",
-        api: {
-          title: "API MCP",
-          subtitle: "Automatisation avancée"
-        },
-        betaTesting: {
-          title: "Tests bêta",
-          subtitle: "Fonctionnalités en premier"
-        },
-        exclusiveTemplates: {
-          title: "Modèles exclusifs",
-          subtitle: "Designs uniques"
-        }
-      }
-    }
-  },
-  de: {
-    title: "Abonnement-Plan",
-    back: "Zurück",
-    popularBadge: "Beliebtester Plan",
-    activeBadge: "Aktiv",
-    plan: {
-      title: "Invoice Generator Pro",
-      subtitle: "Kompletter Plan für Profis und kleine Unternehmen",
-      price: "$19.99",
-      period: "/Monat",
-      mainFeatures: {
-        invoicesTitle: "100 Rechnungen pro Monat",
-        invoicesSubtitle: "vs 5 im kostenlosen Plan - 20x mehr Kapazität",
-        promptsTitle: "100 KI-Prompts pro Monat",
-        promptsSubtitle: "vs 10 im kostenlosen Plan - Vollautomatisierung",
-        earlyAccessTitle: "Früher Zugang",
-        earlyAccessSubtitle: "Neue Funktionen vor allen anderen"
-      },
-      button: {
-        subscribe: "🚀 Auf Pro upgraden - $19.99/Monat",
-        manageSubscription: "Abonnement Verwalten",
-        signInToSubscribe: "Anmelden zum Abonnieren"
-      },
-      securityText: "✅ Jederzeit kündbar • 💳 Sichere Zahlung mit Stripe",
-      toggleDetails: {
-        show: "Alle Vorteile ansehen",
-        hide: "Details ausblenden"
-      },
-      extendedStorage: {
-        title: "Erweiterte Speicherung",
-        description: "2-Jahres-Speicherung",
-        subtitle: "vs 30 Tage im kostenlosen Plan"
-      },
-      premiumFeatures: {
-        title: "Premium-Funktionen",
-        emailSend: {
-          title: "E-Mail-Versand",
-          subtitle: "Rechnungen direkt teilen"
-        },
-        prioritySupport: {
-          title: "Prioritätssupport",
-          subtitle: "24h Antwort garantiert"
-        }
-      },
-      comingSoon: {
-        title: "Demnächst Verfügbar",
-        qrTemplates: {
-          title: "QR-Vorlagen",
-          subtitle: "Automatische QR-Codes"
-        },
-        stripePayment: {
-          title: "Stripe-Zahlungsbutton",
-          subtitle: "Integrierte Zahlungen"
-        }
-      },
-      betaAccess: {
-        title: "Früher Beta-Zugang",
-        api: {
-          title: "MCP API",
-          subtitle: "Erweiterte Automatisierung"
-        },
-        betaTesting: {
-          title: "Beta-Tests",
-          subtitle: "Funktionen zuerst"
-        },
-        exclusiveTemplates: {
-          title: "Exklusive Vorlagen",
-          subtitle: "Einzigartige Designs"
-        }
-      }
-    }
-  }
-};
+
 
 // Evento personalizado para comunicación entre componentes
 export const LANGUAGE_CHANGE_EVENT = 'languageChange';

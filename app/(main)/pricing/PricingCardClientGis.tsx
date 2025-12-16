@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { ChevronDown, ChevronUp, Activity, Layers, AlarmCheck, Radar, Shield, FileCode, Globe } from "lucide-react"
+import { usePricingTranslation } from '@/hooks/useLanguage';
 
 interface PricingCardClientProps {
     authCheck: any,
@@ -18,7 +19,9 @@ export default function PricingCardClient({
     createCustomerPortal,
     backLink
 }: PricingCardClientProps) {
-    const [showAllFeatures, setShowAllFeatures] = useState(false)
+    const [showAllFeatures, setShowAllFeatures] = useState(false);
+    const { t, language, isClient } = usePricingTranslation();
+    
 
     return (
         <div className="min-h-screen text-neutral-100 antialiased">          
@@ -35,7 +38,7 @@ export default function PricingCardClient({
                             boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)'
                         }}
                     >
-                        ← Back to Home
+                        {t.backToHome}
                     </a>
                 </div>
                 <div className="mx-auto max-w-6xl">
@@ -52,17 +55,17 @@ export default function PricingCardClient({
                             }}
                         >
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_3px_rgba(16,185,129,0.4)]"></span>
-                            <span className="text-[0.7rem] sm:text-xs tracking-tight text-white font-medium">Now in Beta · Early Access</span>
+                            <span className="text-[0.7rem] sm:text-xs tracking-tight text-white font-medium">{t.badgeText}</span>
                         </div>
                     </div>
 
                     {/* Title */}
                     <div className="text-center mb-12 space-y-4">
                         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                            Join the Beta as a Founder
+                          {t.mainTitle}
                         </h1>
                         <p className="text-base sm:text-lg text-neutral-100 max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                            Get early access and shape the future of IoT analytics
+                            {t.subtitle}
                         </p>
                     </div>
 
@@ -98,7 +101,7 @@ export default function PricingCardClient({
                             }}
                         >
                             <div className="flex items-center justify-between">
-                                <span className="text-xs tracking-tight text-emerald-300 uppercase font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Founder Tier</span>
+                                <span className="text-xs tracking-tight text-emerald-300 uppercase font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{t.tierLabel}</span>
                                 {isSubscribed && (
                                     <div 
                                         className="text-emerald-200 text-xs px-2.5 py-1 rounded-full"
@@ -108,7 +111,7 @@ export default function PricingCardClient({
                                             boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
                                         }}
                                     >
-                                        Active
+                                        {t.activeLabel}
                                     </div>
                                 )}
                             </div>
@@ -118,10 +121,10 @@ export default function PricingCardClient({
                             {/* Plan Details */}
                             <div className="mb-8">
                                 <div className="flex items-baseline justify-center mb-2">
-                                    <span className="text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">€29</span>
+                                    <span className="text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">{t.price}</span>
                                 </div>
                                 <p className="text-center text-sm text-neutral-200 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                                    One-time payment · Access throughout beta
+                                    {t.paymentInfo}
                                 </p>
                             </div>
 
@@ -138,19 +141,19 @@ export default function PricingCardClient({
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Active Datasets</p>
-                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">2 datasets</p>
-                                        <p className="mt-0.5 text-xs text-neutral-300">With source mixing</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">{t.activeDatasetsLabel}</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.activeDatasetsValue}</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">{t.activeDatasetsDesc}</p>
                                     </div>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Data Points</p>
-                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">1,000</p>
-                                        <p className="mt-0.5 text-xs text-neutral-300">Per dataset</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">{t.dataPointsLabel}</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.dataPointsValue}</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">{t.dataPointsDesc}</p>
                                     </div>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">AI Insights</p>
-                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">5/month</p>
-                                        <p className="mt-0.5 text-xs text-neutral-300">Pattern analysis</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">{t.aiInsightsLabel}</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.aiInsightsValue}</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">{t.aiInsightsDesc}</p>
                                     </div>
                                 </div>
                             </div>
@@ -169,8 +172,8 @@ export default function PricingCardClient({
                                 >
                                     <Activity className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Connect 2 MQTT brokers simultaneously</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Multi-cloud topology with encrypted credentials</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.feature1Title}</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">{t.feature1Desc}</p>
                                     </div>
                                 </div>
 
@@ -186,8 +189,8 @@ export default function PricingCardClient({
                                 >
                                     <Layers className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Custom geospatial layers</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Markers, trails, and dynamic visualization rules</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.feature2Title}</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">{t.feature2Desc}</p>
                                     </div>
                                 </div>
 
@@ -203,8 +206,8 @@ export default function PricingCardClient({
                                 >
                                     <AlarmCheck className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Smart alerts with Slack and email integration</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Configurable thresholds and real-time notifications</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.feature3Title}</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">{t.feature3Desc}</p>
                                     </div>
                                 </div>
 
@@ -220,8 +223,8 @@ export default function PricingCardClient({
                                 >
                                     <Radar className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Configurable metrics with advanced visualizations</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Line, area, bar, scatter, gauge, and distribution charts</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.feature4Title}</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">{t.feature4Desc}</p>
                                     </div>
                                 </div>
                             </div>
@@ -243,7 +246,7 @@ export default function PricingCardClient({
                                             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(50, 50, 50, 0.7)'}
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(40, 40, 40, 0.6)'}
                                         >
-                                            Manage Subscription
+                                            {t.manageSubscription}
                                         </button>
                                     ) : (
                                         <button 
@@ -259,7 +262,7 @@ export default function PricingCardClient({
                                             onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 12px 32px 0 rgba(16, 185, 129, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.4)'}
                                             onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 8px 24px 0 rgba(16, 185, 129, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.3)'}
                                         >
-                                            Get Beta Access — €29
+                                            {t.getBetaAccess}
                                         </button>
                                     )
                                 ) : (
@@ -274,14 +277,14 @@ export default function PricingCardClient({
                                             boxShadow: '0 8px 24px 0 rgba(255, 255, 255, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)'
                                         }}
                                     >
-                                        Sign In to Continue
+                                        {t.signInToContinue}
                                     </a>
                                 )}
                             </div>
 
                             <div className="flex items-center justify-center space-x-2 text-xs text-neutral-300 mb-6">
                                 <Shield className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-                                <p className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Beta software — Not recommended for production use</p>
+                                <p className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.betaWarning}</p>
                             </div>
 
                             {/* Expandable Details */}
@@ -291,7 +294,7 @@ export default function PricingCardClient({
                                     className="flex items-center justify-between w-full text-neutral-200 hover:text-white transition-colors"
                                 >
                                     <span className="text-sm font-medium tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                                        {showAllFeatures ? 'Hide additional features' : 'View all features'}
+                                        {showAllFeatures ? t.hideAdditionalFeatures : t.viewAllFeatures}
                                     </span>
                                     {showAllFeatures ? <ChevronUp className="w-4 h-4" strokeWidth={1.5} /> : <ChevronDown className="w-4 h-4" strokeWidth={1.5} />}
                                 </button>
@@ -300,23 +303,23 @@ export default function PricingCardClient({
                                     <div className="mt-6 space-y-6 animate-in slide-in-from-top duration-300">
                                         {/* During Beta */}
                                         <div className="space-y-3">
-                                            <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Immediate Access</h4>
+                                            <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.immediateAccessTitle}</h4>
                                             <div className="space-y-2 ml-2">
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">Dataset mixing for multi-source analytics</span>
+                                                    <span className="text-neutral-200">{t.immediateFeature1}</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">Shareable GIS dashboards for team collaboration</span>
+                                                    <span className="text-neutral-200">{t.immediateFeature2}</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">MCP server integration with external tools</span>
+                                                    <span className="text-neutral-200">{t.immediateFeature3}</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">AI-powered pattern analysis and insights</span>
+                                                    <span className="text-neutral-200">{t.immediateFeature4}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -325,7 +328,7 @@ export default function PricingCardClient({
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-2">
                                                 <FileCode className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Founder Perks</h4>
+                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.founderPerksTitle}</h4>
                                             </div>
                                             <div className="grid sm:grid-cols-2 gap-3">
                                                 <div 
@@ -338,9 +341,9 @@ export default function PricingCardClient({
                                                         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
                                                     }}
                                                 >
-                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">🎯 Direct Input</p>
-                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Shape the roadmap</p>
-                                                    <p className="mt-0.5 text-xs text-neutral-300">Direct line to the development team</p>
+                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">{t.perk1Label}</p>
+                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.perk1Title}</p>
+                                                    <p className="mt-0.5 text-xs text-neutral-300">{t.perk1Desc}</p>
                                                 </div>
                                                 <div 
                                                     className="rounded-xl px-3 py-2.5 relative overflow-hidden"
@@ -352,9 +355,9 @@ export default function PricingCardClient({
                                                         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
                                                     }}
                                                 >
-                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">🚀 First Access</p>
-                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Features before launch</p>
-                                                    <p className="mt-0.5 text-xs text-neutral-300">Test new capabilities first</p>
+                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">{t.perk2Label}</p>
+                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.perk2Title}</p>
+                                                    <p className="mt-0.5 text-xs text-neutral-300">{t.perk2Desc}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -363,7 +366,7 @@ export default function PricingCardClient({
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-2">
                                                 <Globe className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">After Public Launch</h4>
+                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.postLaunchTitle}</h4>
                                             </div>
                                             <div 
                                                 className="rounded-2xl p-4 relative overflow-hidden"
@@ -377,16 +380,16 @@ export default function PricingCardClient({
                                             >
                                                 <div className="grid sm:grid-cols-3 gap-3 text-xs">
                                                     <div className="text-center">
-                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">🎁 1 Month Free</p>
-                                                        <p className="text-neutral-200">Pro plan at launch</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.postLaunch1Title}</p>
+                                                        <p className="text-neutral-200">{t.postLaunch1Desc}</p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">💰 20% Off</p>
-                                                        <p className="text-neutral-200">First year discount</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.postLaunch2Title}</p>
+                                                        <p className="text-neutral-200">{t.postLaunch2Desc}</p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">🔓 No Lock-In</p>
-                                                        <p className="text-neutral-200">Cancel anytime</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{t.postLaunch3Title}</p>
+                                                        <p className="text-neutral-200">{t.postLaunch3Desc}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -394,7 +397,7 @@ export default function PricingCardClient({
 
                                         {/* Legal disclaimer */}
                                         <div className="text-xs text-neutral-300 space-y-2 border-t pt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                                            <p>By continuing, you agree to our Terms of Service and Privacy Policy. Secure one-time payment processed by Stripe.</p>
+                                            <p>{t.legalText}</p>
                                         </div>
                                     </div>
                                 )}
