@@ -1049,7 +1049,7 @@ mapManager.current.addAnimatedAssetMarkers(fleet, {
     };
   }, [isResizing]);
 
-  return (
+return (
     <div className="fixed inset-0 bg-black text-white font-sans antialiased overflow-hidden">
       {/* Custom Scrollbar Styles */}
       <style jsx>{`
@@ -1120,8 +1120,10 @@ mapManager.current.addAnimatedAssetMarkers(fleet, {
 
       {/* Sidebar - Resizable - Floating style */}
       <div 
-        className={`fixed left-4 sm:left-6 bottom-4 sm:bottom-6 rounded-2xl sm:rounded-3xl border border-white/[0.08] z-20 ${
-          sidebarCollapsed ? 'w-0' : ''
+        className={`fixed left-4 sm:left-6 bottom-4 sm:bottom-6 rounded-2xl sm:rounded-3xl z-20 transition-all duration-700 ${
+          sidebarCollapsed 
+            ? 'w-0 opacity-0 invisible pointer-events-none border-0' 
+            : 'opacity-100 visible pointer-events-auto border border-white/[0.08]'
         } ${
           isMobile
             ? 'bg-black/80 backdrop-blur-2xl top-20' // Mobile: empieza después del header
@@ -1383,21 +1385,25 @@ mapManager.current.addAnimatedAssetMarkers(fleet, {
       {/* Sidebar Toggle Button - Responsive */}
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        className="fixed top-1/2 -translate-y-1/2 z-30 w-7 h-14 sm:w-8 sm:h-16 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-r-xl flex items-center justify-center hover:bg-white/5 transition-all duration-300 group"
-        style={{ left: sidebarCollapsed ? '0' : 'calc(100vw - 28px)', display: sidebarCollapsed ? 'flex' : 'none' }}
-        aria-label={sidebarCollapsed ? 'Open sidebar' : 'Close sidebar'}
+        className={`fixed top-1/2 -translate-y-1/2 z-30 w-7 h-14 sm:w-8 sm:h-16 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-r-xl flex items-center justify-center hover:bg-white/5 transition-all duration-300 group ${
+          sidebarCollapsed ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
+        }`}
+        style={{ left: '0' }}
+        aria-label="Open sidebar"
       >
-        <div className={`w-1 h-6 sm:h-8 bg-white/30 rounded-full transition-transform duration-300 ${sidebarCollapsed ? 'rotate-0' : 'rotate-180'}`}></div>
+        <div className="w-1 h-6 sm:h-8 bg-white/30 rounded-full transition-transform duration-300"></div>
       </button>
+      
       {/* Mobile: Show toggle on right when sidebar is open */}
-  {!sidebarCollapsed && (
-    <button
-      onClick={() => setSidebarCollapsed(true)}
-      className="sm:hidden fixed top-1/2 -translate-y-1/2 right-0 z-30 w-7 h-14 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-l-xl flex items-center justify-center hover:bg-white/5 transition-all duration-300"
-      aria-label="Close sidebar"
-    >
-      <div className="w-1 h-6 bg-white/30 rounded-full rotate-180"></div>
-    </button>
-  )}
-</div>);
+      {!sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(true)}
+          className="sm:hidden fixed top-1/2 -translate-y-1/2 right-0 z-30 w-7 h-14 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-l-xl flex items-center justify-center hover:bg-white/5 transition-all duration-300"
+          aria-label="Close sidebar"
+        >
+          <div className="w-1 h-6 bg-white/30 rounded-full rotate-180"></div>
+        </button>
+      )}
+    </div>
+  );
 }
