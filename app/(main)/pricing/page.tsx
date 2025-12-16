@@ -114,13 +114,6 @@ export default async function Pricing() {
             throw new Error('Failed to set stripeCustomerId for the user')
         }
 
-        // Log environment variables
-        console.log("🔧 Environment variables:")
-        console.log("  - NODE_ENV:", process.env.NODE_ENV)
-        console.log("  - NEXT_PUBLIC_URL:", process.env.NEXT_PUBLIC_URL)
-        console.log("  - PRODUCTION_URL:", process.env.PRODUCTION_URL)
-        console.log("  - STRIPE_PRICE_ID:", process.env.STRIPE_PRICE_ID)
-
         // Use helper function to ensure valid URL
         const rawDomainUrl = process.env.NEXT_PUBLIC_URL || 
             (process.env.NODE_ENV === 'production' 
@@ -161,7 +154,7 @@ export default async function Pricing() {
         console.log("💳 Creating Stripe session with parameters:")
         console.log("  - customerId:", databaseUser.stripeCustomerId)
         console.log("  - domainUrl:", domainUrl)
-        console.log("  - priceId:", process.env.STRIPE_PRICE_ID)
+        // console.log("  - priceId:", process.env.STRIPE_PRICE_ID)
         console.log("  - successUrl:", successUrl)
 
         try {
@@ -196,7 +189,7 @@ export default async function Pricing() {
 
         // Use helper function for return URL as well
         const rawReturnUrl = process.env.NODE_ENV === 'production' 
-            ? (process.env.PRODUCTION_URL || 'invoice-saas-1bmqr0p72-joel-links-projects.vercel.app')
+            ? (process.env.PRODUCTION_URL || 'https://geo-insight.vercel.app/')
             : 'localhost:3000'
 
         const returnUrl = ensureValidUrl(rawReturnUrl)

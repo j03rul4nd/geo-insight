@@ -59,13 +59,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://yourdomain.com',
+    url: 'https://geo-insight.vercel.app/',
     siteName: 'Industrial Geospatial',
     title: 'Industrial Geospatial Intelligence | Real-Time Operations Platform',
     description: 'Convert chaotic industrial data into crystal-clear insights. Reduce inefficiencies by 40% and boost uptime to 99.9% with AI-powered geospatial analytics.',
     images: [
       {
-        url: 'https://yourdomain.com/og-image.png',
+        url: 'https://geo-insight.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Industrial Geospatial - Real-Time Operations Intelligence',
@@ -77,17 +77,17 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Industrial Geospatial Intelligence | Real-Time Operations',
     description: 'Transform industrial chaos into actionable insights. 40% efficiency gain, 99.9% uptime. Purpose-built for operations teams.',
-    images: ['https://yourdomain.com/twitter-image.jpg'],
-    creator: '@yourhandle',
+    images: ['https://geo-insight.vercel.app/og-image.png'],
+    creator: '@geoinsight',
   },
 
   alternates: {
-    canonical: 'https://yourdomain.com',
+    canonical: 'https://geo-insight.vercel.app/',
     languages: {
-      'en-US': 'https://yourdomain.com/en',
-      'es-ES': 'https://yourdomain.com/es',
-      'de-DE': 'https://yourdomain.com/de',
-      'fr-FR': 'https://yourdomain.com/fr',
+      'en-US': 'https://geo-insight.vercel.app/en',
+      'es-ES': 'https://geo-insight.vercel.app/es',
+      'de-DE': 'https://geo-insight.vercel.app/de',
+      'fr-FR': 'https://geo-insight.vercel.app/fr',
     },
   },
 
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
   category: 'technology',
   classification: 'Industrial Software',
 
-  metadataBase: new URL('https://yourdomain.com'),
+  metadataBase: new URL(process.env.PRODUCTION_URL || 'https://geo-insight.vercel.app/'),
 };
 
 export default function RootLayout({
