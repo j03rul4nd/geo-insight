@@ -93,6 +93,7 @@ export function HeroSection() {
             <Button
               variant="ghost"
               size="lg"
+              onClick={() => window.location.href = './dashboard/'}
               className="text-white/70 hover:text-white hover:bg-white/5 text-sm px-8 h-12"
             >
               {t.ctaSecondary}

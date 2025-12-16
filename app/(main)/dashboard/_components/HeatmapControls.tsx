@@ -67,20 +67,41 @@ const HeatmapControls: React.FC<HeatmapControlsProps> = ({ onToggle }) => {
     <div className="fixed top-24 right-4 sm:right-6 md:right-8 z-30 w-64 sm:w-72">
       {/* Header */}
       <div 
-        className="bg-black/60 backdrop-blur-2xl rounded-t-2xl border border-white/10 border-b-0 px-4 py-3 cursor-pointer hover:bg-black/70 transition-all duration-300"
+        className="bg-gradient-to-br from-black/70 to-black/50 backdrop-blur-2xl rounded-2xl border border-white/20 px-5 py-3.5 cursor-pointer hover:border-white/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
-            <span className="text-sm font-light text-white/90">Heatmap Layers</span>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></div>
+              <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-blue-400/50 animate-ping"></div>
+            </div>
+            <div>
+              <span className="text-sm font-medium text-white/95 tracking-wide">Heatmap Layers</span>
+              <div className="text-[9px] text-white/30 font-light mt-0.5">
+                {Object.values(visibleLayers).filter(Boolean).length} active
+              </div>
+            </div>
           </div>
-          <div 
-            className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}
-          >
-            <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {heatmapLayers.map((layer) => (
+                visibleLayers[layer.id] && (
+                  <div 
+                    key={layer.id}
+                    className="w-1.5 h-1.5 rounded-full animate-pulse"
+                    style={{ backgroundColor: layer.color }}
+                  />
+                )
+              ))}
+            </div>
+            <div 
+              className={`transform transition-all duration-500 ${isExpanded ? 'rotate-180' : 'rotate-0'} group-hover:scale-110`}
+            >
+              <svg className="w-4 h-4 text-white/60 group-hover:text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>

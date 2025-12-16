@@ -52,17 +52,17 @@ export default function PricingCardClient({
                             }}
                         >
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_3px_rgba(16,185,129,0.4)]"></span>
-                            <span className="text-[0.7rem] sm:text-xs tracking-tight text-white font-medium">Early Access · Operational Pricing</span>
+                            <span className="text-[0.7rem] sm:text-xs tracking-tight text-white font-medium">Now in Beta · Early Access</span>
                         </div>
                     </div>
 
                     {/* Title */}
                     <div className="text-center mb-12 space-y-4">
                         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                            Early Access Pricing
+                            Join the Beta as a Founder
                         </h1>
                         <p className="text-base sm:text-lg text-neutral-100 max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                            Fixed capacity tiers for teams running continuous operations. Scale from pilot deployments to enterprise infrastructure monitoring.
+                            Get early access and shape the future of IoT analytics
                         </p>
                     </div>
 
@@ -98,7 +98,7 @@ export default function PricingCardClient({
                             }}
                         >
                             <div className="flex items-center justify-between">
-                                <span className="text-xs tracking-tight text-emerald-300 uppercase font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Enterprise Operations</span>
+                                <span className="text-xs tracking-tight text-emerald-300 uppercase font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">Founder Tier</span>
                                 {isSubscribed && (
                                     <div 
                                         className="text-emerald-200 text-xs px-2.5 py-1 rounded-full"
@@ -118,11 +118,10 @@ export default function PricingCardClient({
                             {/* Plan Details */}
                             <div className="mb-8">
                                 <div className="flex items-baseline justify-center mb-2">
-                                    <span className="text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">$95</span>
-                                    <span className="text-xl text-neutral-200 ml-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">/month</span>
+                                    <span className="text-5xl font-semibold tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">€29</span>
                                 </div>
                                 <p className="text-center text-sm text-neutral-200 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                                    Base tier · Scales with throughput requirements
+                                    One-time payment · Access throughout beta
                                 </p>
                             </div>
 
@@ -139,19 +138,19 @@ export default function PricingCardClient({
                             >
                                 <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Message Throughput</p>
-                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">50M msg/day</p>
-                                        <p className="mt-0.5 text-xs text-neutral-300">Burst capacity included</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Active Datasets</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">2 datasets</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">With source mixing</p>
                                     </div>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Broker Connections</p>
-                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Up to 5 brokers</p>
-                                        <p className="mt-0.5 text-xs text-neutral-300">Multi-cloud topology</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Data Points</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">1,000</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">Per dataset</p>
                                     </div>
                                     <div className="px-4 py-3.5">
-                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Data Retention</p>
-                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">90 days live</p>
-                                        <p className="mt-0.5 text-xs text-neutral-300">Archive on request</p>
+                                        <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">AI Insights</p>
+                                        <p className="mt-1 text-sm text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">5/month</p>
+                                        <p className="mt-0.5 text-xs text-neutral-300">Pattern analysis</p>
                                     </div>
                                 </div>
                             </div>
@@ -170,8 +169,8 @@ export default function PricingCardClient({
                                 >
                                     <Activity className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Real-Time Geospatial Stream Processing</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Sub-second MQTT ingest to 3D map rendering with asset reconciliation</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Connect 2 MQTT brokers simultaneously</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Multi-cloud topology with encrypted credentials</p>
                                     </div>
                                 </div>
 
@@ -187,8 +186,8 @@ export default function PricingCardClient({
                                 >
                                     <Layers className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Configurable Layer & Filter Rules</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Define data contracts, hierarchies, and operational regions with schemas</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Custom geospatial layers</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Markers, trails, and dynamic visualization rules</p>
                                     </div>
                                 </div>
 
@@ -204,8 +203,8 @@ export default function PricingCardClient({
                                 >
                                     <AlarmCheck className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Automated Visual Alerting</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Encode thresholds and escalation states for instant incident detection</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Smart alerts with Slack and email integration</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Configurable thresholds and real-time notifications</p>
                                     </div>
                                 </div>
 
@@ -221,8 +220,8 @@ export default function PricingCardClient({
                                 >
                                     <Radar className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
                                     <div>
-                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Unified Operational View</p>
-                                        <p className="text-xs text-neutral-300 mt-0.5">Single source of truth for operations, engineering, and field teams</p>
+                                        <p className="text-sm font-medium text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Configurable metrics with advanced visualizations</p>
+                                        <p className="text-xs text-neutral-300 mt-0.5">Line, area, bar, scatter, gauge, and distribution charts</p>
                                     </div>
                                 </div>
                             </div>
@@ -260,7 +259,7 @@ export default function PricingCardClient({
                                             onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 12px 32px 0 rgba(16, 185, 129, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.4)'}
                                             onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 8px 24px 0 rgba(16, 185, 129, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.3)'}
                                         >
-                                            Request Early Access
+                                            Get Beta Access — €29
                                         </button>
                                     )
                                 ) : (
@@ -275,14 +274,14 @@ export default function PricingCardClient({
                                             boxShadow: '0 8px 24px 0 rgba(255, 255, 255, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)'
                                         }}
                                     >
-                                        Sign In to Access
+                                        Sign In to Continue
                                     </a>
                                 )}
                             </div>
 
                             <div className="flex items-center justify-center space-x-2 text-xs text-neutral-300 mb-6">
                                 <Shield className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-                                <p className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Priority evaluation for 24/7 operations · High-consequence systems</p>
+                                <p className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Beta software — Not recommended for production use</p>
                             </div>
 
                             {/* Expandable Details */}
@@ -292,37 +291,41 @@ export default function PricingCardClient({
                                     className="flex items-center justify-between w-full text-neutral-200 hover:text-white transition-colors"
                                 >
                                     <span className="text-sm font-medium tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                                        {showAllFeatures ? 'Hide detailed specifications' : 'View detailed specifications'}
+                                        {showAllFeatures ? 'Hide additional features' : 'View all features'}
                                     </span>
                                     {showAllFeatures ? <ChevronUp className="w-4 h-4" strokeWidth={1.5} /> : <ChevronDown className="w-4 h-4" strokeWidth={1.5} />}
                                 </button>
 
                                 {showAllFeatures && (
                                     <div className="mt-6 space-y-6 animate-in slide-in-from-top duration-300">
-                                        {/* Platform Access */}
+                                        {/* During Beta */}
                                         <div className="space-y-3">
-                                            <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Platform Access</h4>
+                                            <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Immediate Access</h4>
                                             <div className="space-y-2 ml-2">
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">Dedicated deployment environment with isolated data plane</span>
+                                                    <span className="text-neutral-200">Dataset mixing for multi-source analytics</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">SSO integration (SAML 2.0 / OIDC) with role-based access control</span>
+                                                    <span className="text-neutral-200">Shareable GIS dashboards for team collaboration</span>
                                                 </div>
                                                 <div className="flex items-start space-x-2 text-sm">
                                                     <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
-                                                    <span className="text-neutral-200">API access for programmatic layer configuration and queries</span>
+                                                    <span className="text-neutral-200">MCP server integration with external tools</span>
+                                                </div>
+                                                <div className="flex items-start space-x-2 text-sm">
+                                                    <span className="mt-1 h-1 w-4 bg-emerald-400/60 rounded shadow-[0_0_8px_rgba(16,185,129,0.3)]"></span>
+                                                    <span className="text-neutral-200">AI-powered pattern analysis and insights</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Integration & Deployment */}
+                                        {/* Exclusive Benefits */}
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-2">
                                                 <FileCode className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Integration & Deployment</h4>
+                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Founder Perks</h4>
                                             </div>
                                             <div className="grid sm:grid-cols-2 gap-3">
                                                 <div 
@@ -335,9 +338,9 @@ export default function PricingCardClient({
                                                         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
                                                     }}
                                                 >
-                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Onboarding</p>
-                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">2-week guided setup</p>
-                                                    <p className="mt-0.5 text-xs text-neutral-300">Schema design & broker config</p>
+                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">🎯 Direct Input</p>
+                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Shape the roadmap</p>
+                                                    <p className="mt-0.5 text-xs text-neutral-300">Direct line to the development team</p>
                                                 </div>
                                                 <div 
                                                     className="rounded-xl px-3 py-2.5 relative overflow-hidden"
@@ -349,18 +352,18 @@ export default function PricingCardClient({
                                                         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.08)'
                                                     }}
                                                 >
-                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">Support SLA</p>
-                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">4-hour response</p>
-                                                    <p className="mt-0.5 text-xs text-neutral-300">Critical incidents prioritized</p>
+                                                    <p className="text-[0.65rem] tracking-tight text-neutral-400 uppercase font-medium">🚀 First Access</p>
+                                                    <p className="mt-1 text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Features before launch</p>
+                                                    <p className="mt-0.5 text-xs text-neutral-300">Test new capabilities first</p>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Compliance & Security */}
+                                        {/* Post-Launch */}
                                         <div className="space-y-3">
                                             <div className="flex items-center space-x-2">
                                                 <Globe className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Compliance & Security</h4>
+                                                <h4 className="text-sm font-semibold text-white tracking-tight uppercase text-neutral-400 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">After Public Launch</h4>
                                             </div>
                                             <div 
                                                 className="rounded-2xl p-4 relative overflow-hidden"
@@ -374,26 +377,24 @@ export default function PricingCardClient({
                                             >
                                                 <div className="grid sm:grid-cols-3 gap-3 text-xs">
                                                     <div className="text-center">
-                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Data residency</p>
-                                                        <p className="text-neutral-200">Region-specific hosting</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">🎁 1 Month Free</p>
+                                                        <p className="text-neutral-200">Pro plan at launch</p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Audit logs</p>
-                                                        <p className="text-neutral-200">Full activity tracking</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">💰 20% Off</p>
+                                                        <p className="text-neutral-200">First year discount</p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">Encryption</p>
-                                                        <p className="text-neutral-200">At-rest & in-transit</p>
+                                                        <p className="text-white font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">🔓 No Lock-In</p>
+                                                        <p className="text-neutral-200">Cancel anytime</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Usage Notes */}
+                                        {/* Legal disclaimer */}
                                         <div className="text-xs text-neutral-300 space-y-2 border-t pt-4" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                                            <p>* Message throughput scales with additional capacity tiers. Contact for custom requirements beyond 50M/day.</p>
-                                            <p>* Early access prioritizes teams with continuous operations, safety-critical systems, or regulatory requirements.</p>
-                                            <p>* No marketing sequences—coordination strictly for evaluation, deployment, and operational updates.</p>
+                                            <p>By continuing, you agree to our Terms of Service and Privacy Policy. Secure one-time payment processed by Stripe.</p>
                                         </div>
                                     </div>
                                 )}

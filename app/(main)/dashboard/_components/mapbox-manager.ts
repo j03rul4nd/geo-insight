@@ -140,6 +140,9 @@ export class MapboxManager {
       assets.forEach((asset) => {
         if (!this.map || asset.type !== 'fleet' || !asset.trail) return;
 
+        // Check if source already exists before adding
+        if (this.map.getSource(`trail-${asset.id}`)) return;
+
         // Agregar source para el trail
         this.map.addSource(`trail-${asset.id}`, {
           type: 'geojson',
@@ -154,38 +157,43 @@ export class MapboxManager {
         });
 
         // Capa principal del trail
-        this.map.addLayer({
-          id: `trail-${asset.id}`,
-          type: 'line',
-          source: `trail-${asset.id}`,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': asset.color,
-            'line-width': 3,
-            'line-opacity': 0.7,
-            'line-blur': 0.5,
-          },
-        });
+        if (!this.map.getLayer(`trail-${asset.id}`)) {
+          this.map.addLayer({
+            id: `trail-${asset.id}`,
+            type: 'line',
+            source: `trail-${asset.id}`,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': asset.color,
+              'line-width': 3,
+              'line-opacity': 0.7,
+              'line-blur': 0.5,
+            },
+          });
+        }
 
         // Capa de glow para el trail
-        this.map.addLayer({
-          id: `trail-glow-${asset.id}`,
-          type: 'line',
-          source: `trail-${asset.id}`,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': asset.color,
-            'line-width': 8,
-            'line-opacity': 0.4,
-            'line-blur': 4,
-          },
-        });
+        if (!this.map.getLayer(`trail-glow-${asset.id}`)) {
+          this.map.addLayer({
+            id: `trail-glow-${asset.id}`,
+            type: 'line',
+            source: `trail-${asset.id}`,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': asset.color,
+              'line-width': 8,
+              'line-opacity': 0.4,
+              'line-blur': 4,
+            },
+          });
+        }
+
       });
     });
   }
@@ -400,6 +408,9 @@ export class MapboxManager {
       parks.forEach((park) => {
         if (!this.map) return;
 
+        // Check if source already exists before adding
+        if (this.map.getSource(`park-${park.id}`)) return;
+
         this.map.addSource(`park-${park.id}`, {
           type: 'geojson',
           data: {
@@ -417,40 +428,46 @@ export class MapboxManager {
         });
 
         // Relleno con opacidad base
-        this.map.addLayer({
-          id: `park-fill-${park.id}`,
-          type: 'fill',
-          source: `park-${park.id}`,
-          paint: {
-            'fill-color': park.color,
-            'fill-opacity': 0.25
-          }
-        });
+        if (!this.map.getLayer(`park-fill-${park.id}`)) {
+          this.map.addLayer({
+            id: `park-fill-${park.id}`,
+            type: 'fill',
+            source: `park-${park.id}`,
+            paint: {
+              'fill-color': park.color,
+              'fill-opacity': 0.25
+            }
+          });
+        }
 
         // Borde exterior
-        this.map.addLayer({
-          id: `park-outline-${park.id}`,
-          type: 'line',
-          source: `park-${park.id}`,
-          paint: {
-            'line-color': park.color,
-            'line-width': 2,
-            'line-opacity': 0.8
-          }
-        });
+        if (!this.map.getLayer(`park-outline-${park.id}`)) {
+          this.map.addLayer({
+            id: `park-outline-${park.id}`,
+            type: 'line',
+            source: `park-${park.id}`,
+            paint: {
+              'line-color': park.color,
+              'line-width': 2,
+              'line-opacity': 0.8
+            }
+          });
+        }
 
         // Borde con efecto glow
-        this.map.addLayer({
-          id: `park-glow-${park.id}`,
-          type: 'line',
-          source: `park-${park.id}`,
-          paint: {
-            'line-color': park.color,
-            'line-width': 6,
-            'line-opacity': 0.3,
-            'line-blur': 4
-          }
-        });
+        if (!this.map.getLayer(`park-glow-${park.id}`)) {
+          this.map.addLayer({
+            id: `park-glow-${park.id}`,
+            type: 'line',
+            source: `park-${park.id}`,
+            paint: {
+              'line-color': park.color,
+              'line-width': 6,
+              'line-opacity': 0.3,
+              'line-blur': 4
+            }
+          });
+        }
 
         // Configurar interactividad
         this.setupParkInteractivity(park);
@@ -1001,6 +1018,9 @@ addHeatmap(points: HeatmapPoint[], options?: {
   this.map.on('load', () => {
     if (!this.map) return;
 
+    // Check if source already exists before adding
+    if (this.map.getSource(`heatmap-source-${id}`)) return;
+
     // Crear features para el heatmap
     const features = points.map(point => ({
       type: 'Feature' as const,
@@ -1068,51 +1088,53 @@ addHeatmap(points: HeatmapPoint[], options?: {
     });
 
     // Agregar capa de heatmap
-    this.map.addLayer({
-      id: `heatmap-layer-${id}`,
-      type: 'heatmap',
-      source: `heatmap-source-${id}`,
-      layout: {
-      'visibility': visible ? 'visible' : 'none' // ✅ AÑADIR esto
-      },
-      paint: {
-        // Peso basado en intensidad
-        'heatmap-weight': [
-          'interpolate',
-          ['linear'],
-          ['get', 'intensity'],
-          0, 0,
-          1, 1
-        ],
-        // Intensidad según zoom
-        'heatmap-intensity': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          0, maxIntensity * 0.3,
-          9, maxIntensity * 0.7,
-          15, maxIntensity
-        ],
-        // Color según esquema elegido
-        'heatmap-color': [
-          'interpolate',
-          ['linear'],
-          ['heatmap-density'],
-          ...colorSchemes[colorScheme]
-        ],
-        // Radio del heatmap
-        'heatmap-radius': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          0, radius * 0.3,
-          9, radius * 0.6,
-          15, radius
-        ],
-        // Opacidad
-        'heatmap-opacity': opacity
-      }
-    }, 'waterway-label');
+     if (!this.map.getLayer(`heatmap-layer-${id}`)) {
+       this.map.addLayer({
+         id: `heatmap-layer-${id}`,
+         type: 'heatmap',
+         source: `heatmap-source-${id}`,
+         layout: {
+         'visibility': visible ? 'visible' : 'none' // ✅ AÑADIR esto
+         },
+         paint: {
+           // Peso basado en intensidad
+           'heatmap-weight': [
+             'interpolate',
+             ['linear'],
+             ['get', 'intensity'],
+             0, 0,
+             1, 1
+           ],
+           // Intensidad según zoom
+           'heatmap-intensity': [
+             'interpolate',
+             ['linear'],
+             ['zoom'],
+             0, maxIntensity * 0.3,
+             9, maxIntensity * 0.7,
+             15, maxIntensity
+           ],
+           // Color según esquema elegido
+           'heatmap-color': [
+             'interpolate',
+             ['linear'],
+             ['heatmap-density'],
+             ...colorSchemes[colorScheme]
+           ],
+           // Radio del heatmap
+           'heatmap-radius': [
+             'interpolate',
+             ['linear'],
+             ['zoom'],
+             0, radius * 0.3,
+             9, radius * 0.6,
+             15, radius
+           ],
+           // Opacidad
+           'heatmap-opacity': opacity
+         }
+       }, 'waterway-label');
+     }
   });
 }
 
